@@ -1,11 +1,11 @@
 #pragma once
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include "function/render/RenderSystem.h"
 
 namespace VlkEngine {
     class VulkanEngine {
@@ -15,16 +15,20 @@ namespace VlkEngine {
         VulkanEngine(int w, int h, std::string name);
         ~VulkanEngine();
 
-    private:
+    private:        
+        void InitEngine(); 
+        void StartEngine(); 
+        void MainLoop();
+        void ShutDownEngine();
+        
+        // window
         GLFWwindow* window;
         std::string windowName;
         const uint32_t width;
         const uint32_t height;
 
-        void InitWindow(); 
-        void StartEngine(); 
-        void MainLoop();
-        void ShutDownEngine(); 
+        // render system
+        RenderSystem* renderSystem;
 
     };
 }

@@ -34,6 +34,9 @@ target_link_libraries(${PROJECT_NAME}  ${Vulkan_LIBRARIES})
 # other files
 target_link_libraries(${PROJECT_NAME}  runtime)
 
+# add_dependencies(${PROJECT_NAME} Shaders)
+
+
 
 
 
