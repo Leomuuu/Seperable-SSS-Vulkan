@@ -5,7 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
-#include "function/render/RenderSystem.h"
+#include "function/render/VulkanSetup.h"
 
 namespace VlkEngine {
     class VulkanEngine {
@@ -27,8 +27,7 @@ namespace VlkEngine {
         const uint32_t width;
         const uint32_t height;
 
-        // render system
-        RenderSystem* renderSystem;
-
+        // render
+        VulkanSetup* vulkanSetup;
     };
 }

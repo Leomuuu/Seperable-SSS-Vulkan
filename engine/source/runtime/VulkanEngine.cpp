@@ -6,6 +6,7 @@ namespace VlkEngine {
     }
     VulkanEngine::~VulkanEngine()
     {
+        delete vulkanSetup;
     }
     void VulkanEngine::Run()
     {
@@ -20,15 +21,11 @@ namespace VlkEngine {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
 
-        renderSystem = new RenderSystem();
+        vulkanSetup = new VulkanSetup();
     }
     void VulkanEngine::StartEngine()
     {
-        if (renderSystem != nullptr) {
-            if (!renderSystem->CreateInstance()) {
-                throw std::runtime_error("failed to create vulkan instance!");
-            }
-        }
+        vulkanSetup->InitVulkan();
     }
     void VulkanEngine::MainLoop()
     {
@@ -38,9 +35,8 @@ namespace VlkEngine {
     }
     void VulkanEngine::ShutDownEngine()
     {
-        if (renderSystem != nullptr) {
-            renderSystem->DestroyInstance();
-        }
+        vulkanSetup->ShutDownVulkan();
+
         glfwDestroyWindow(window);
         glfwTerminate();
     }
