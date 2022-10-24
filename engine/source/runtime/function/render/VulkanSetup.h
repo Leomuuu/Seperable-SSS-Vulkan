@@ -6,13 +6,14 @@
 #include <iostream>
 #include <vector>
 
-// #define  NDEBUG
+#define  NDEBUG
 
 namespace VlkEngine {
 	class VulkanSetup {
 	private:
+		// vulkan instance
 		VkInstance instance;
-
+		// validation layer
 		const std::vector<const char*> validationLayers = {
 			"VK_LAYER_KHRONOS_validation"
 		};
@@ -22,12 +23,14 @@ namespace VlkEngine {
 #else
 		const bool enableValidationLayers = true;
 #endif
-		
+		// physical device
+		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
 	private:
+		// vulkan instance
 		void CreateVulkanInstance();
 		void DestroyVulkanInstance();
-
+		// validation layer
 		void SetupDebugMessenger();
 		bool CheckValidationLayerSupport();
 		std::vector<const char*> GetRequiredExtensions();
@@ -38,6 +41,10 @@ namespace VlkEngine {
 		void DestroyDebugUtilsMessengerEXT(VkInstance instance,
 			VkDebugUtilsMessengerEXT debugMessenger,
 			const VkAllocationCallbacks* pAllocator);
+		// physical device
+		void PickPhysicalDevice();
+		bool IsDeviceSuitable(VkPhysicalDevice device);
+		int RateDeviceSuitability(VkPhysicalDevice device);
 
 	public:
 		void InitVulkan();
