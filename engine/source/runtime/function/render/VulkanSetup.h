@@ -5,10 +5,19 @@
 #include <stdexcept>
 #include <iostream>
 #include <vector>
+#include <optional>
 
 #define  NDEBUG
 
 namespace VlkEngine {
+	struct QueueFamilyIndices {
+		std::optional<uint32_t> graphicsFamily;
+
+		bool IsComplete() {
+			return graphicsFamily.has_value();
+		}
+	};
+
 	class VulkanSetup {
 	private:
 		// vulkan instance
@@ -25,6 +34,10 @@ namespace VlkEngine {
 #endif
 		// physical device
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+		// logical device
+		VkDevice device;
+		// queue handle
+		VkQueue graphicsQueue;
 
 	private:
 		// vulkan instance
@@ -45,6 +58,12 @@ namespace VlkEngine {
 		void PickPhysicalDevice();
 		bool IsDeviceSuitable(VkPhysicalDevice device);
 		int RateDeviceSuitability(VkPhysicalDevice device);
+		// queue family
+		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+		//logical device
+		void CreateLogicalDevice();
+		void DestroyLogicalDevice();
+
 
 	public:
 		void InitVulkan();
