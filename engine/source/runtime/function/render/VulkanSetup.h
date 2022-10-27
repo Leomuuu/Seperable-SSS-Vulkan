@@ -1,5 +1,11 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
+#define VK_USE_PLATFORM_WIN32_KHR
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define NOMINMAX
+
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <stdexcept>
@@ -12,13 +18,23 @@
 namespace VlkEngine {
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
 		bool IsComplete() {
-			return graphicsFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
 
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
+
 	class VulkanSetup {
+	public:
+		VulkanSetup(GLFWwindow* glfwwindow);
+
 	private:
 		// vulkan instance
 		VkInstance instance;
@@ -38,6 +54,20 @@ namespace VlkEngine {
 		VkDevice device;
 		// queue handle
 		VkQueue graphicsQueue;
+		// window surface
+		VkSurfaceKHR surface;
+		GLFWwindow* window;
+		VkQueue presentQueue;
+		// swap chain
+		VkSwapchainKHR swapChain;
+		const std::vector<const char*> deviceExtensions = {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		};
+		std::vector<VkImage> swapChainImages;
+		VkFormat swapChainImageFormat;
+		VkExtent2D swapChainExtent;
+		// image view
+		std::vector<VkImageView> swapChainImageViews;
 
 	private:
 		// vulkan instance
@@ -60,10 +90,23 @@ namespace VlkEngine {
 		int RateDeviceSuitability(VkPhysicalDevice device);
 		// queue family
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-		//logical device
+		// logical device
 		void CreateLogicalDevice();
 		void DestroyLogicalDevice();
-
+		// window surface
+		void CreateSurface();
+		void DestroySurface();
+		// swap chain
+		void CreateSwapChain();
+		void DestroySwapChain();
+		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
+		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		// image view 
+		void CreateImageViews();
+		void DestroyImageViews();
 
 	public:
 		void InitVulkan();

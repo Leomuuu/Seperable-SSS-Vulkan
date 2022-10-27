@@ -21,7 +21,7 @@ namespace VlkEngine {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
 
-        vulkanSetup = new VulkanSetup();
+        vulkanSetup = new VulkanSetup(window);
     }
     void VulkanEngine::StartEngine()
     {
