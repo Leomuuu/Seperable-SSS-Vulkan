@@ -1,6 +1,7 @@
 #pragma once
 
 #include "function/render/VulkanSetup.h"
+#include "function/render/RenderPipline.h"
 
 namespace VlkEngine {
     class VulkanEngine {
@@ -24,5 +25,6 @@ namespace VlkEngine {
 
         // render
         VulkanSetup* vulkanSetup;
+        RenderPipline* renderPipline;
     };
 }

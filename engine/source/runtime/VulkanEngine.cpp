@@ -22,10 +22,15 @@ namespace VlkEngine {
         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
 
         vulkanSetup = new VulkanSetup(window);
+        renderPipline = new RenderPipline(vulkanSetup->device);
     }
     void VulkanEngine::StartEngine()
     {
         vulkanSetup->InitVulkan();
+        renderPipline->CreateRenderPass(vulkanSetup->swapChainImageFormat);
+        renderPipline->CreateGraphicsPipeline(
+            std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.vert.spv"),
+            std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.frag.spv"));
     }
     void VulkanEngine::MainLoop()
     {
@@ -35,6 +40,8 @@ namespace VlkEngine {
     }
     void VulkanEngine::ShutDownEngine()
     {
+        renderPipline->DestroyGraphicsPipeline();
+        renderPipline->DestroyRenderPass();
         vulkanSetup->ShutDownVulkan();
 
         glfwDestroyWindow(window);

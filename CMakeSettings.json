@@ -9,7 +9,14 @@
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "CMAKE_INSTALL_PREFIX",
+          "value": "C:/Users/MU/Desktop/Graduation Project/code/MEngine/out/install/x64-Debug",
+          "type": "PATH"
+        }
+      ]
     }
   ]
 }
