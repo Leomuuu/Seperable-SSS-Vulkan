@@ -1,3 +1,4 @@
+#pragma once
 #include "RenderHeader.h"
 
 #define  NDEBUG
@@ -20,7 +21,8 @@ namespace VlkEngine {
 
 	class VulkanSetup {
 		friend class VulkanEngine;
-		friend class VulkanPipline;
+		friend class RenderPipline;
+		friend class RenderBuffer;
 
 	public:
 		VulkanSetup(GLFWwindow* glfwwindow);

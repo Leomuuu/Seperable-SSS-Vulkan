@@ -1,8 +1,10 @@
+#pragma  once
 #include "RenderHeader.h"
 
 namespace VlkEngine {
 
 	class RenderPipline {
+		friend class RenderBuffer;
 	public:
 		RenderPipline(VkDevice& vkdevice);
 

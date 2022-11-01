@@ -23,6 +23,7 @@ namespace VlkEngine {
 
         vulkanSetup = new VulkanSetup(window);
         renderPipline = new RenderPipline(vulkanSetup->device);
+        renderBuffer = new RenderBuffer(vulkanSetup,renderPipline);
     }
     void VulkanEngine::StartEngine()
     {
@@ -31,15 +32,18 @@ namespace VlkEngine {
         renderPipline->CreateGraphicsPipeline(
             std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.vert.spv"),
             std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.frag.spv"));
+        renderBuffer->CreateBuffers();
     }
     void VulkanEngine::MainLoop()
     {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+
         }
     }
     void VulkanEngine::ShutDownEngine()
     {
+        renderBuffer->DestroyBuffers();
         renderPipline->DestroyGraphicsPipeline();
         renderPipline->DestroyRenderPass();
         vulkanSetup->ShutDownVulkan();
@@ -49,4 +53,8 @@ namespace VlkEngine {
     }
 
 	
+	void VulkanEngine::DrawFrame()
+	{
+
+	}
 }

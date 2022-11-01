@@ -2,6 +2,7 @@
 
 #include "function/render/VulkanSetup.h"
 #include "function/render/RenderPipline.h"
+#include "function/render/RenderBuffer.h"
 
 namespace VlkEngine {
     class VulkanEngine {
@@ -16,6 +17,8 @@ namespace VlkEngine {
         void StartEngine(); 
         void MainLoop();
         void ShutDownEngine();
+
+        void DrawFrame();
         
         // window
         GLFWwindow* window;
@@ -26,5 +29,6 @@ namespace VlkEngine {
         // render
         VulkanSetup* vulkanSetup;
         RenderPipline* renderPipline;
+        RenderBuffer* renderBuffer;
     };
 }
