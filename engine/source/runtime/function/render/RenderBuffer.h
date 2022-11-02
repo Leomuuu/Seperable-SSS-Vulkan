@@ -5,6 +5,7 @@
 
 namespace VlkEngine {
 	class RenderBuffer {
+		friend class VulkanEngine;
 		public:
 			RenderBuffer(VulkanSetup* vulkansetup,RenderPipline* renderpipline);
 		private:

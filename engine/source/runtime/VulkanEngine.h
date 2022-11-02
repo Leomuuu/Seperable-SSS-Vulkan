@@ -3,6 +3,7 @@
 #include "function/render/VulkanSetup.h"
 #include "function/render/RenderPipline.h"
 #include "function/render/RenderBuffer.h"
+#include "function/render/VulkanSyncObject.h"
 
 namespace VlkEngine {
     class VulkanEngine {
@@ -30,5 +31,6 @@ namespace VlkEngine {
         VulkanSetup* vulkanSetup;
         RenderPipline* renderPipline;
         RenderBuffer* renderBuffer;
+        VulkanSyncObject* vulkanSyncObject;
     };
 }
