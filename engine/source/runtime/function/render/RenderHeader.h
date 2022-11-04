@@ -13,3 +13,8 @@
 #include <vector>
 #include <optional>
 #include <string>
+
+namespace VlkEngine {
+	const int MAX_FRAMES_IN_FLIGHT = 2;
+
+}

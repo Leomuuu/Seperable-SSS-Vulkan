@@ -28,6 +28,7 @@ namespace VlkEngine {
         const uint32_t height;
 
         // render
+        uint32_t currentFrame = 0;
         VulkanSetup* vulkanSetup;
         RenderPipline* renderPipline;
         RenderBuffer* renderBuffer;

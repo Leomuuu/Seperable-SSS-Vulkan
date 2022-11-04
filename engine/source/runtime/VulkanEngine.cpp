@@ -59,29 +59,29 @@ namespace VlkEngine {
 	
 	void VulkanEngine::DrawFrame()
 	{
-        vkWaitForFences(vulkanSetup->device, 1, &(vulkanSyncObject->inFlightFence), VK_TRUE, UINT64_MAX);
-        vkResetFences(vulkanSetup->device, 1, &(vulkanSyncObject->inFlightFence));
+        vkWaitForFences(vulkanSetup->device, 1, &(vulkanSyncObject->inFlightFences[currentFrame]), VK_TRUE, UINT64_MAX);
+        vkResetFences(vulkanSetup->device, 1, &(vulkanSyncObject->inFlightFences[currentFrame]));
 
         uint32_t imageIndex;
         vkAcquireNextImageKHR(vulkanSetup->device, vulkanSetup->swapChain,
-            UINT64_MAX, vulkanSyncObject->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+            UINT64_MAX, vulkanSyncObject->imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-        vkResetCommandBuffer(renderBuffer->commandBuffer, 0);
-        renderBuffer->RecordCommandBuffer(renderBuffer->commandBuffer, imageIndex);
+        vkResetCommandBuffer(renderBuffer->commandBuffers[currentFrame], 0);
+        renderBuffer->RecordCommandBuffer(renderBuffer->commandBuffers[currentFrame], imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        VkSemaphore waitSemaphores[] = { vulkanSyncObject->imageAvailableSemaphore };
+        VkSemaphore waitSemaphores[] = { vulkanSyncObject->imageAvailableSemaphores[currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &(renderBuffer->commandBuffer);
-        VkSemaphore signalSemaphores[] = { vulkanSyncObject->renderFinishedSemaphore };
+        submitInfo.pCommandBuffers = &(renderBuffer->commandBuffers[currentFrame]);
+        VkSemaphore signalSemaphores[] = { vulkanSyncObject->renderFinishedSemaphores[currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
-        if (vkQueueSubmit(vulkanSetup->graphicsQueue, 1, &submitInfo, vulkanSyncObject->inFlightFence) != VK_SUCCESS) {
+        if (vkQueueSubmit(vulkanSetup->graphicsQueue, 1, &submitInfo, vulkanSyncObject->inFlightFences[currentFrame]) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -96,5 +96,7 @@ namespace VlkEngine {
         presentInfo.pResults = nullptr; // Optional
 
         vkQueuePresentKHR(vulkanSetup->presentQueue, &presentInfo);
+
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 }

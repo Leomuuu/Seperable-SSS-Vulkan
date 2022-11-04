@@ -34,7 +34,8 @@ namespace VlkEngine {
 			// command pool
 			VkCommandPool commandPool;
 			// command buffer
-			VkCommandBuffer commandBuffer;
+			std::vector<VkCommandBuffer> commandBuffers;
+
 	};
 
 }
