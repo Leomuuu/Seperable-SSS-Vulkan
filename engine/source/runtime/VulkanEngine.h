@@ -6,9 +6,13 @@
 #include "function/render/VulkanSyncObject.h"
 
 namespace VlkEngine {
+    
+
     class VulkanEngine {
     public:
         void Run(); 
+        
+        static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 
         VulkanEngine(int w, int h, std::string name);
         ~VulkanEngine();
@@ -20,6 +24,7 @@ namespace VlkEngine {
         void ShutDownEngine();
 
         void DrawFrame();
+        void WindowSurfaceChange();
         
         // window
         GLFWwindow* window;
@@ -33,5 +38,6 @@ namespace VlkEngine {
         RenderPipline* renderPipline;
         RenderBuffer* renderBuffer;
         VulkanSyncObject* vulkanSyncObject;
+        bool framebufferResized = false;
     };
 }
