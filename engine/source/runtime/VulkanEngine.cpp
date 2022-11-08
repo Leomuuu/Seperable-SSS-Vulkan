@@ -34,6 +34,7 @@ namespace VlkEngine {
         renderPipline = new RenderPipline(vulkanSetup->device);
         renderBuffer = new RenderBuffer(vulkanSetup,renderPipline);
         vulkanSyncObject = new VulkanSyncObject(vulkanSetup->device);
+        
     }
     void VulkanEngine::StartEngine()
     {

@@ -24,6 +24,7 @@ namespace VlkEngine {
 		friend class RenderPipline;
 		friend class RenderBuffer;
 		friend class VulkanSyncObject;
+		friend class VertexBuffer;
 	public:
 		VulkanSetup(GLFWwindow* glfwwindow);
 
