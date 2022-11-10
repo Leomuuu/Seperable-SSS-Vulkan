@@ -3,8 +3,8 @@
 namespace VlkEngine {
 	
 
-	VulkanSyncObject::VulkanSyncObject(VkDevice& vkdevice):
-		device(vkdevice)
+	VulkanSyncObject::VulkanSyncObject(VulkanSetup* vulkansetup):
+		vulkanSetup(vulkansetup)
 	{
 
 	}
@@ -23,9 +23,9 @@ namespace VlkEngine {
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+			if (vkCreateSemaphore(vulkanSetup->device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(vulkanSetup->device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateFence(vulkanSetup->device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
 					throw std::runtime_error("failed to create synchronization objects for a frame!");
 			}
 		}
@@ -34,9 +34,9 @@ namespace VlkEngine {
 	void VulkanSyncObject::DestroySyncObjects()
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(device, inFlightFences[i], nullptr);
+			vkDestroySemaphore(vulkanSetup->device, renderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(vulkanSetup->device, imageAvailableSemaphores[i], nullptr);
+			vkDestroyFence(vulkanSetup->device, inFlightFences[i], nullptr);
 		}
 	}
 }

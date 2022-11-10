@@ -9,6 +9,7 @@ namespace VlkEngine {
 
 	class RenderBuffer {
 		friend class VulkanEngine;
+		friend class RenderDescriptor;
 		public:
 			RenderBuffer(VulkanSetup* vulkansetup,RenderPipline* renderpipline);
 		private:
@@ -29,7 +30,6 @@ namespace VlkEngine {
 			void DestroyCommandPool();
 			// command buffer
 			void CreateCommandBuffer();
-			void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 			// vertex buffer
 			void CreateVertexBuffer();
 			void DestroyVertexBuffer();
@@ -40,6 +40,9 @@ namespace VlkEngine {
 			// index buffer
 			void CreateIndexBuffer();
 			void DestroyIndexBuffer();
+			// uniform buffer
+			void CreateUniformBuffers();
+			void DestroyUniformBuffers();
 
 		private:
 			// frame buffer
@@ -54,6 +57,10 @@ namespace VlkEngine {
 			// index buffer
 			VkBuffer indexBuffer;
 			VkDeviceMemory indexBufferMemory;
+			// uniform buffer
+			std::vector<VkBuffer> uniformBuffers;
+			std::vector<VkDeviceMemory> uniformBuffersMemory;
+			std::vector<void*> uniformBuffersMapped;
 
 	};
 

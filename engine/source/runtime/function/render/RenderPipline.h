@@ -1,12 +1,15 @@
 #pragma  once
 #include "RenderHeader.h"
+#include "VulkanSetup.h"
+#include "RenderDescriptor.h"
 
 namespace VlkEngine {
 
 	class RenderPipline {
 		friend class RenderBuffer;
+		friend class VulkanEngine;
 	public:
-		RenderPipline(VkDevice& vkdevice);
+		RenderPipline(VulkanSetup* vulkansetup, RenderDescriptor* renderdescriptor);
 
 	public:
 		// Render Pass
@@ -18,7 +21,9 @@ namespace VlkEngine {
 		
 
 	private:
-		VkDevice& device;
+		VulkanSetup* vulkanSetup;
+		RenderDescriptor* renderDescriptor;
+
 		VkRenderPass renderPass;
 		VkPipelineLayout pipelineLayout;
 		VkPipeline graphicsPipeline;

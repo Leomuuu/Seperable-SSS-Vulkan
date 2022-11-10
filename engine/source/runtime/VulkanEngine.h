@@ -4,6 +4,7 @@
 #include "function/render/RenderPipline.h"
 #include "function/render/RenderBuffer.h"
 #include "function/render/VulkanSyncObject.h"
+#include "function/render/RenderDescriptor.h"
 
 namespace VlkEngine {
     
@@ -24,7 +25,10 @@ namespace VlkEngine {
         void ShutDownEngine();
 
         void DrawFrame();
+
+        void RecordCommandBuffer(uint32_t imageIndex);
         void WindowSurfaceChange();
+        void UpdateUniformBuffer(uint32_t currentImage);
         
         // window
         GLFWwindow* window;
@@ -37,6 +41,7 @@ namespace VlkEngine {
         VulkanSetup* vulkanSetup;
         RenderPipline* renderPipline;
         RenderBuffer* renderBuffer;
+        RenderDescriptor* renderDescriptor;
         VulkanSyncObject* vulkanSyncObject;
         bool framebufferResized = false;
     };

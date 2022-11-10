@@ -6,8 +6,8 @@
 namespace VlkEngine {
 	
 
-	RenderPipline::RenderPipline(VkDevice& vkdevice):
-		device(vkdevice)
+	RenderPipline::RenderPipline(VulkanSetup* vulkansetup, RenderDescriptor* renderdescriptor):
+		vulkanSetup(vulkansetup),renderDescriptor(renderdescriptor)
 	{
 
 	}
@@ -53,14 +53,14 @@ namespace VlkEngine {
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(vulkanSetup->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create render pass!");
 		}
 	}
 
 	void RenderPipline::DestroyRenderPass()
 	{
-		vkDestroyRenderPass(device, renderPass, nullptr);
+		vkDestroyRenderPass(vulkanSetup->device, renderPass, nullptr);
 	}
 
 	void RenderPipline::CreateGraphicsPipeline(std::string& vertShaderPath,
@@ -128,7 +128,7 @@ namespace VlkEngine {
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.0f;
 		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizer.depthBiasEnable = VK_FALSE; // can be used in shadow map
 		rasterizer.depthBiasConstantFactor = 0.0f; // Optional
 		rasterizer.depthBiasClamp = 0.0f; // Optional
@@ -171,11 +171,11 @@ namespace VlkEngine {
 		/*Pipeline layout*/
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0; // Optional
-		pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+		pipelineLayoutInfo.setLayoutCount = 1; // Optional
+		pipelineLayoutInfo.pSetLayouts = &(renderDescriptor->descriptorSetLayout); // Optional
 		pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 		pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(vulkanSetup->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
@@ -198,19 +198,19 @@ namespace VlkEngine {
 		// creating a new graphics pipeline by deriving from an existing pipeline is allowed in Vulkan
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional   
 		pipelineInfo.basePipelineIndex = -1; // Optional
-		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(vulkanSetup->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
-		vkDestroyShaderModule(device, fragShaderModule, nullptr);
-		vkDestroyShaderModule(device, vertShaderModule, nullptr);
+		vkDestroyShaderModule(vulkanSetup->device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(vulkanSetup->device, vertShaderModule, nullptr);
 	}
 
 
 	void RenderPipline::DestroyGraphicsPipeline()
 	{
-		vkDestroyPipeline(device, graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+		vkDestroyPipeline(vulkanSetup->device, graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(vulkanSetup->device, pipelineLayout, nullptr);
 	}
 
 
@@ -223,7 +223,7 @@ namespace VlkEngine {
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(vulkanSetup->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create shader module!");
 		}
 

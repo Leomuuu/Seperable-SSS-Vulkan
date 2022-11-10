@@ -31,19 +31,23 @@ namespace VlkEngine {
         glfwSetFramebufferSizeCallback(window, FramebufferResizeCallback); 
 
         vulkanSetup = new VulkanSetup(window);
-        renderPipline = new RenderPipline(vulkanSetup->device);
+        renderDescriptor = new RenderDescriptor(vulkanSetup);
+        renderPipline = new RenderPipline(vulkanSetup,renderDescriptor);
         renderBuffer = new RenderBuffer(vulkanSetup,renderPipline);
-        vulkanSyncObject = new VulkanSyncObject(vulkanSetup->device);
+        vulkanSyncObject = new VulkanSyncObject(vulkanSetup);
         
     }
     void VulkanEngine::StartEngine()
     {
         vulkanSetup->InitVulkan();
         renderPipline->CreateRenderPass(vulkanSetup->swapChainImageFormat);
+        renderDescriptor->CreateDescriptorSetLayout();
         renderPipline->CreateGraphicsPipeline(
             std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.vert.spv"),
             std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.frag.spv"));
         renderBuffer->CreateBuffers();
+        renderDescriptor->CreateDescriptorPool();
+        renderDescriptor->CreateDescriptorSets(renderBuffer);
         vulkanSyncObject->CreateSyncObjects();
     }
     void VulkanEngine::MainLoop()
@@ -57,6 +61,7 @@ namespace VlkEngine {
     void VulkanEngine::ShutDownEngine()
     {
         vulkanSyncObject->DestroySyncObjects();
+        renderDescriptor->DestroyDescriptor();
         renderBuffer->DestroyBuffers();
         renderPipline->DestroyGraphicsPipeline();
         renderPipline->DestroyRenderPass();
@@ -81,11 +86,13 @@ namespace VlkEngine {
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
+
+        UpdateUniformBuffer(currentFrame);
         
         vkResetFences(vulkanSetup->device, 1, &(vulkanSyncObject->inFlightFences[currentFrame]));
         
         vkResetCommandBuffer(renderBuffer->commandBuffers[currentFrame], 0);
-        renderBuffer->RecordCommandBuffer(renderBuffer->commandBuffers[currentFrame], imageIndex);
+        RecordCommandBuffer(imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -125,6 +132,65 @@ namespace VlkEngine {
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
+	void VulkanEngine::RecordCommandBuffer(uint32_t imageIndex)
+	{
+        VkCommandBuffer commandBuffer = renderBuffer->commandBuffers[currentFrame];
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0; // Optional
+        beginInfo.pInheritanceInfo = nullptr; // Optional
+
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("failed to begin recording command buffer!");
+        }
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = renderPipline->renderPass;
+        renderPassInfo.framebuffer = renderBuffer->swapChainFramebuffers[imageIndex];
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        renderPassInfo.renderArea.extent = vulkanSetup->swapChainExtent;
+        VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPipline->graphicsPipeline);
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(vulkanSetup->swapChainExtent.width);
+        viewport.height = static_cast<float>(vulkanSetup->swapChainExtent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.offset = { 0, 0 };
+        scissor.extent = vulkanSetup->swapChainExtent;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        VkBuffer vertexBuffers[] = { renderBuffer->vertexBuffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdBindIndexBuffer(commandBuffer, renderBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPipline->pipelineLayout,
+            0, 1, &((renderDescriptor->descriptorSets)[currentFrame]), 0, nullptr);
+
+        //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+        vkCmdEndRenderPass(commandBuffer);
+
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to record command buffer!");
+        }
+	}
+
 	void VulkanEngine::WindowSurfaceChange()
 	{
         int width = 0, height = 0;
@@ -146,4 +212,20 @@ namespace VlkEngine {
 
 	}
 
+	void VulkanEngine::UpdateUniformBuffer(uint32_t currentImage)
+	{
+        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+	
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), vulkanSetup->swapChainExtent.width / (float)(vulkanSetup->swapChainExtent.height), 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+
+        memcpy(renderBuffer->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+
+
+    }
 }

@@ -1,13 +1,14 @@
 #include "RenderHeader.h"
+#include "VulkanSetup.h"
 
 namespace VlkEngine {
 	class VulkanSyncObject {
 		friend class VulkanEngine;
 
 	public:
-		VulkanSyncObject(VkDevice& vkdevice);
+		VulkanSyncObject(VulkanSetup* vulkansetup);
 	private:
-		VkDevice& device;
+		VulkanSetup* vulkanSetup;
 
 
 	public:

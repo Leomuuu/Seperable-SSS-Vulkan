@@ -3,18 +3,21 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define NOMINMAX
+#define GLM_FORCE_RADIANS
 
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <stdexcept>
 #include <iostream>
 #include <vector>
 #include <optional>
 #include <string>
 #include <array>
+#include <chrono>
 
 namespace VlkEngine {
 	const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -56,5 +59,9 @@ namespace VlkEngine {
 	0, 1, 2, 2, 3, 0
 	};
 
-
+	struct UniformBufferObject {
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
 }
