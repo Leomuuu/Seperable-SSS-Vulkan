@@ -3,7 +3,7 @@
 
 int main() {
 
-    VlkEngine::VulkanEngine vEngine(800,600,"Learn");
+    VlkEngine::VulkanEngine vEngine(1600,900,"MEngine");
 
     try {
         vEngine.Run();

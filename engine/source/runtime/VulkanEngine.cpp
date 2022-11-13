@@ -21,14 +21,33 @@ namespace VlkEngine {
         app->framebufferResized = true;
 	}
 
+	void VulkanEngine::MouseMovecallback(GLFWwindow* window, double xpos, double ypos)
+	{
+        auto app = reinterpret_cast<VulkanEngine*>(glfwGetWindowUserPointer(window));
+        InputSystem* inputSystem = app->inputSystem;
+
+        if (inputSystem!=nullptr) {
+            inputSystem->MouseMovement(window, xpos, ypos);
+        }
+	}
+
 	void VulkanEngine::InitEngine()
     {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, FramebufferResizeCallback); 
+
+        camera = new Camera(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 0.0f, 1.0f),
+            glm::radians(45.0f),0.1f,10.0f);
+
+        inputSystem = new InputSystem(camera);
+        glfwSetCursorPosCallback(window, MouseMovecallback);
+
 
         vulkanSetup = new VulkanSetup(window);
         renderDescriptor = new RenderDescriptor(vulkanSetup);
@@ -54,6 +73,7 @@ namespace VlkEngine {
     {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+            inputSystem->ProcessInput(window);
             DrawFrame();
         }
         vkDeviceWaitIdle(vulkanSetup->device);
@@ -217,11 +237,11 @@ namespace VlkEngine {
         static auto startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-	
+
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), vulkanSetup->swapChainExtent.width / (float)(vulkanSetup->swapChainExtent.height), 0.1f, 10.0f);
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = camera->GetViewMatrix();
+        ubo.proj = glm::perspective(camera->Fov, vulkanSetup->swapChainExtent.width / (float)(vulkanSetup->swapChainExtent.height), camera->zNear, camera->zFar);
         ubo.proj[1][1] *= -1;
 
         memcpy(renderBuffer->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));

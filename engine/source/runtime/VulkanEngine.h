@@ -5,6 +5,8 @@
 #include "function/render/RenderBuffer.h"
 #include "function/render/VulkanSyncObject.h"
 #include "function/render/RenderDescriptor.h"
+#include "function/render/Camera.h"
+#include "function/input/InputSystem.h"
 
 namespace VlkEngine {
     
@@ -14,6 +16,7 @@ namespace VlkEngine {
         void Run(); 
         
         static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
+        static void MouseMovecallback(GLFWwindow* window, double xpos, double ypos);
 
         VulkanEngine(int w, int h, std::string name);
         ~VulkanEngine();
@@ -44,5 +47,12 @@ namespace VlkEngine {
         RenderDescriptor* renderDescriptor;
         VulkanSyncObject* vulkanSyncObject;
         bool framebufferResized = false;
+
+        // camera
+        Camera* camera;
+
+        // input
+        InputSystem* inputSystem;
+
     };
 }

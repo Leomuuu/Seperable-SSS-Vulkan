@@ -4,6 +4,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define NOMINMAX
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -11,6 +12,9 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/epsilon.hpp>
 #include <stdexcept>
 #include <iostream>
 #include <vector>
