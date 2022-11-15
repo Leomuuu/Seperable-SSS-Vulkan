@@ -1,7 +1,9 @@
-#pragma  once
+#pragma once
+
 #include "RenderHeader.h"
 #include "VulkanSetup.h"
 #include "RenderDescriptor.h"
+#include "../platform/FileService.h"
 
 namespace VlkEngine {
 
@@ -9,7 +11,7 @@ namespace VlkEngine {
 		friend class RenderBuffer;
 		friend class VulkanEngine;
 	public:
-		RenderPipline(VulkanSetup* vulkansetup, RenderDescriptor* renderdescriptor);
+		RenderPipline(RenderDescriptor* renderdescriptor);
 
 	public:
 		// Render Pass
@@ -21,7 +23,6 @@ namespace VlkEngine {
 		
 
 	private:
-		VulkanSetup* vulkanSetup;
 		RenderDescriptor* renderDescriptor;
 
 		VkRenderPass renderPass;

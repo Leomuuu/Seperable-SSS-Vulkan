@@ -4,12 +4,10 @@
 #include "RenderPipline.h"
 
 namespace VlkEngine {
-
-
-
 	class RenderBuffer {
 		friend class VulkanEngine;
 		friend class RenderDescriptor;
+		friend class RenderImage;
 		public:
 			RenderBuffer(VulkanSetup* vulkansetup,RenderPipline* renderpipline);
 		private:
@@ -33,16 +31,20 @@ namespace VlkEngine {
 			// vertex buffer
 			void CreateVertexBuffer();
 			void DestroyVertexBuffer();
-			uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-			void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-				VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-			void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 			// index buffer
 			void CreateIndexBuffer();
 			void DestroyIndexBuffer();
 			// uniform buffer
 			void CreateUniformBuffers();
 			void DestroyUniformBuffers();
+
+			uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+			void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+				VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+			void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+			VkCommandBuffer PreSingleTimeCommands();
+			void PostSingleTimeCommands(VkCommandBuffer commandBuffer);
+
 
 		private:
 			// frame buffer

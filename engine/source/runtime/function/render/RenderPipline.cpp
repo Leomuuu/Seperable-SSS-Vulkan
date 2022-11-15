@@ -1,13 +1,11 @@
 #include "RenderPipline.h"
-#include "../platform/FileService.h"
 
-#include <filesystem>
 
 namespace VlkEngine {
 	
 
-	RenderPipline::RenderPipline(VulkanSetup* vulkansetup, RenderDescriptor* renderdescriptor):
-		vulkanSetup(vulkansetup),renderDescriptor(renderdescriptor)
+	RenderPipline::RenderPipline(RenderDescriptor* renderdescriptor):
+		renderDescriptor(renderdescriptor)
 	{
 
 	}
@@ -53,14 +51,14 @@ namespace VlkEngine {
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(vulkanSetup->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(renderDescriptor->vulkanSetup->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create render pass!");
 		}
 	}
 
 	void RenderPipline::DestroyRenderPass()
 	{
-		vkDestroyRenderPass(vulkanSetup->device, renderPass, nullptr);
+		vkDestroyRenderPass(renderDescriptor->vulkanSetup->device, renderPass, nullptr);
 	}
 
 	void RenderPipline::CreateGraphicsPipeline(std::string& vertShaderPath,
@@ -175,7 +173,7 @@ namespace VlkEngine {
 		pipelineLayoutInfo.pSetLayouts = &(renderDescriptor->descriptorSetLayout); // Optional
 		pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 		pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-		if (vkCreatePipelineLayout(vulkanSetup->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(renderDescriptor->vulkanSetup->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
@@ -198,19 +196,19 @@ namespace VlkEngine {
 		// creating a new graphics pipeline by deriving from an existing pipeline is allowed in Vulkan
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional   
 		pipelineInfo.basePipelineIndex = -1; // Optional
-		if (vkCreateGraphicsPipelines(vulkanSetup->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(renderDescriptor->vulkanSetup->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
-		vkDestroyShaderModule(vulkanSetup->device, fragShaderModule, nullptr);
-		vkDestroyShaderModule(vulkanSetup->device, vertShaderModule, nullptr);
+		vkDestroyShaderModule(renderDescriptor->vulkanSetup->device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(renderDescriptor->vulkanSetup->device, vertShaderModule, nullptr);
 	}
 
 
 	void RenderPipline::DestroyGraphicsPipeline()
 	{
-		vkDestroyPipeline(vulkanSetup->device, graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(vulkanSetup->device, pipelineLayout, nullptr);
+		vkDestroyPipeline(renderDescriptor->vulkanSetup->device, graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(renderDescriptor->vulkanSetup->device, pipelineLayout, nullptr);
 	}
 
 
@@ -223,7 +221,7 @@ namespace VlkEngine {
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(vulkanSetup->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(renderDescriptor->vulkanSetup->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create shader module!");
 		}
 

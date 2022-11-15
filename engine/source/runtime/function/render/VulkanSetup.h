@@ -25,6 +25,7 @@ namespace VlkEngine {
 		friend class RenderBuffer;
 		friend class VulkanSyncObject;
 		friend class RenderDescriptor;
+		friend class RenderImage;
 	public:
 		VulkanSetup(GLFWwindow* glfwwindow);
 
@@ -100,6 +101,7 @@ namespace VlkEngine {
 		// image view 
 		void CreateImageViews();
 		void DestroyImageViews();
+		VkImageView CreateImageView(VkImage image, VkFormat format);
 
 	public:
 		void InitVulkan();

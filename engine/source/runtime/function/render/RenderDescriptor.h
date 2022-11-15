@@ -3,8 +3,10 @@
 #include "RenderHeader.h"
 #include "VulkanSetup.h"
 #include "RenderBuffer.h"
+#include "RenderImage.h"
 
 namespace VlkEngine {
+
 	class RenderDescriptor {
 		friend class RenderPipline;
 		friend class RenderBuffer;
@@ -18,7 +20,7 @@ namespace VlkEngine {
 		// DescriptorPool
 		void CreateDescriptorPool();
 		// DescriptorSet
-		void CreateDescriptorSets(RenderBuffer* renderBuffer);
+		void CreateDescriptorSets(RenderBuffer* renderBuffer, RenderImage* renderImage);
 	
 	private:
 		VulkanSetup* vulkanSetup;

@@ -1,4 +1,6 @@
 #include "FileService.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 namespace VlkEngine {
 
@@ -16,5 +18,17 @@ namespace VlkEngine {
 		file.close();
 
 		return buffer;
+	}
+
+
+	stbi_uc* FileService::LoadAssetImage(const std::string& filename, int* texWidth, int* texHeight, int* texChannels, const int STBI_type)
+	{
+		stbi_uc* pixels = stbi_load(&filename[0], texWidth, texHeight, texChannels, STBI_type);
+		return pixels;
+	}
+
+	void FileService::CleanUpAssetImage(stbi_uc* pixels)
+	{
+		stbi_image_free(pixels);
 	}
 }

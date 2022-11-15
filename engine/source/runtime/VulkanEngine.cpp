@@ -48,11 +48,11 @@ namespace VlkEngine {
         inputSystem = new InputSystem(camera);
         glfwSetCursorPosCallback(window, MouseMovecallback);
 
-
         vulkanSetup = new VulkanSetup(window);
         renderDescriptor = new RenderDescriptor(vulkanSetup);
-        renderPipline = new RenderPipline(vulkanSetup,renderDescriptor);
+        renderPipline = new RenderPipline(renderDescriptor);
         renderBuffer = new RenderBuffer(vulkanSetup,renderPipline);
+        renderImage = new RenderImage(renderBuffer);
         vulkanSyncObject = new VulkanSyncObject(vulkanSetup);
         
     }
@@ -65,8 +65,11 @@ namespace VlkEngine {
             std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.vert.spv"),
             std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.frag.spv"));
         renderBuffer->CreateBuffers();
+        renderImage->CreateTextureImage();
+        renderImage->CreateTextureImageView();
+        renderImage->CreateTextureSampler();
         renderDescriptor->CreateDescriptorPool();
-        renderDescriptor->CreateDescriptorSets(renderBuffer);
+        renderDescriptor->CreateDescriptorSets(renderBuffer,renderImage);
         vulkanSyncObject->CreateSyncObjects();
     }
     void VulkanEngine::MainLoop()
@@ -82,6 +85,9 @@ namespace VlkEngine {
     {
         vulkanSyncObject->DestroySyncObjects();
         renderDescriptor->DestroyDescriptor();
+        renderImage->DestroyTextureSampler();
+        renderImage->DestroyTextureImageView();
+        renderImage->DestroyTextureImage();
         renderBuffer->DestroyBuffers();
         renderPipline->DestroyGraphicsPipeline();
         renderPipline->DestroyRenderPass();

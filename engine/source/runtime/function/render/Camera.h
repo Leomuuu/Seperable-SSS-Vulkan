@@ -19,8 +19,8 @@ namespace VlkEngine {
 		glm::vec3 camRight;
 		glm::vec3 camUp;
 		glm::vec3 worldUp;
-		float mousespeedX = 0.1f;
-		float mousespeedY = 0.1f;
+		float mousespeedX = 0.05f;
+		float mousespeedY = 0.05f;
 		float movespeedX = 0.01f;
 		float movespeedY = 0.01f;
 		float movespeedZ = 0.01f;

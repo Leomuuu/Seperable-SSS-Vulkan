@@ -6,7 +6,9 @@
 #include "function/render/VulkanSyncObject.h"
 #include "function/render/RenderDescriptor.h"
 #include "function/render/Camera.h"
+#include "function/render/RenderImage.h"
 #include "function/input/InputSystem.h"
+
 
 namespace VlkEngine {
     
@@ -44,6 +46,7 @@ namespace VlkEngine {
         VulkanSetup* vulkanSetup;
         RenderPipline* renderPipline;
         RenderBuffer* renderBuffer;
+        RenderImage* renderImage;
         RenderDescriptor* renderDescriptor;
         VulkanSyncObject* vulkanSyncObject;
         bool framebufferResized = false;
