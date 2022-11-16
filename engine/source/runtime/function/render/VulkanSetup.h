@@ -101,7 +101,13 @@ namespace VlkEngine {
 		// image view 
 		void CreateImageViews();
 		void DestroyImageViews();
-		VkImageView CreateImageView(VkImage image, VkFormat format);
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+	public:
+		// support format
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates,
+			VkImageTiling tiling, VkFormatFeatureFlags features);
+		VkFormat FindDepthFormat();
 
 	public:
 		void InitVulkan();

@@ -8,6 +8,7 @@ namespace VlkEngine {
 	class RenderImage {
 		friend class VulkanEngine;
 		friend class RenderDescriptor;
+		friend class RenderBuffer;
 	public:
 		RenderImage(RenderBuffer* renderbuffer);
 
@@ -27,6 +28,14 @@ namespace VlkEngine {
 		VkSampler textureSampler;
 		void CreateTextureSampler();
 		void DestroyTextureSampler();
+		// DepthBuffer
+		VkImage depthImage;
+		VkDeviceMemory depthImageMemory;
+		VkImageView depthImageView;
+		void CreateDepthResource();
+		void DestroyDepthResource();
+		bool HasStencilComponent(VkFormat format);
+
 
 		void CreateImage(uint32_t width, uint32_t height,
 			VkFormat format, VkImageTiling tiling,

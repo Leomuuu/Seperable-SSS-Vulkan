@@ -6,7 +6,9 @@ namespace VlkEngine {
 	RenderImage::RenderImage(RenderBuffer* renderbuffer)
 	: renderBuffer(renderbuffer)
 	{
-		
+		if (renderbuffer != nullptr) {
+			renderbuffer->renderImage = this;
+		}
 	}
 
 	void RenderImage::CreateTextureImage()
@@ -60,7 +62,7 @@ namespace VlkEngine {
 	void RenderImage::CreateTextureImageView()
 	{
 		textureImageView = renderBuffer->vulkanSetup->
-			CreateImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+			CreateImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	void RenderImage::DestroyTextureImageView()
@@ -105,6 +107,29 @@ namespace VlkEngine {
 	void RenderImage::DestroyTextureSampler()
 	{
 		vkDestroySampler(renderBuffer->vulkanSetup->device, textureSampler, nullptr);
+	}
+
+	void RenderImage::CreateDepthResource()
+	{
+		VulkanSetup* vulkanSetup = renderBuffer->vulkanSetup;
+
+		VkFormat depthFormat = vulkanSetup->FindDepthFormat();
+
+		CreateImage(vulkanSetup->swapChainExtent.width, vulkanSetup->swapChainExtent.height, 
+			depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+		depthImageView = vulkanSetup->CreateImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	}
+
+	void RenderImage::DestroyDepthResource()
+	{
+		vkDestroyImageView(renderBuffer->vulkanSetup->device, depthImageView, nullptr);
+		vkDestroyImage(renderBuffer->vulkanSetup->device, depthImage, nullptr);
+		vkFreeMemory(renderBuffer->vulkanSetup->device, depthImageMemory, nullptr);
+	}
+
+	bool RenderImage::HasStencilComponent(VkFormat format)
+	{
+		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 
 	void RenderImage::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)

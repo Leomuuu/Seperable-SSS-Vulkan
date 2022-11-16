@@ -13,6 +13,7 @@ namespace VlkEngine {
 		private:
 			VulkanSetup* vulkanSetup;
 			RenderPipline* renderPipline;
+			RenderImage* renderImage;
 
 		public:
 			void CreateBuffers();
