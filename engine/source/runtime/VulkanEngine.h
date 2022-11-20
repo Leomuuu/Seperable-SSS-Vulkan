@@ -15,11 +15,17 @@ namespace VlkEngine {
     
 
     class VulkanEngine {
+        friend class RenderDescriptor;
+        friend class RenderPipline;
+        friend class RenderBuffer;
+        friend class RenderImage;
     public:
         void Run(); 
         
         static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
         static void MouseMovecallback(GLFWwindow* window, double xpos, double ypos);
+        static void KeyInputcallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
 
         VulkanEngine(int w, int h, std::string name);
         ~VulkanEngine();

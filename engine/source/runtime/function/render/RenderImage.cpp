@@ -3,12 +3,9 @@
 namespace VlkEngine {
 	
 
-	RenderImage::RenderImage(RenderBuffer* renderbuffer)
-	: renderBuffer(renderbuffer)
+	RenderImage::RenderImage(VulkanEngine* vlkengine)
+	: engine(vlkengine)
 	{
-		if (renderbuffer != nullptr) {
-			renderbuffer->renderImage = this;
-		}
 	}
 
 	void RenderImage::CreateTextureImage()
@@ -25,14 +22,14 @@ namespace VlkEngine {
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
-		renderBuffer->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+		engine->renderBuffer->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 			stagingBuffer, stagingBufferMemory);
 
 		void* data;
-		vkMapMemory(renderBuffer->vulkanSetup->device, stagingBufferMemory, 0, imageSize, 0, &data);
+		vkMapMemory(engine->vulkanSetup->device, stagingBufferMemory, 0, imageSize, 0, &data);
 		memcpy(data, pixels, static_cast<size_t>(imageSize));
-		vkUnmapMemory(renderBuffer->vulkanSetup->device, stagingBufferMemory);
+		vkUnmapMemory(engine->vulkanSetup->device, stagingBufferMemory);
 
 		FileService::CleanUpAssetImage(pixels);
 
@@ -48,26 +45,26 @@ namespace VlkEngine {
 		TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		vkDestroyBuffer(renderBuffer->vulkanSetup->device, stagingBuffer, nullptr);
-		vkFreeMemory(renderBuffer->vulkanSetup->device, stagingBufferMemory, nullptr);
+		vkDestroyBuffer(engine->vulkanSetup->device, stagingBuffer, nullptr);
+		vkFreeMemory(engine->vulkanSetup->device, stagingBufferMemory, nullptr);
 
 	}
 
 	void RenderImage::DestroyTextureImage()
 	{
-		vkDestroyImage(renderBuffer->vulkanSetup->device, textureImage, nullptr);
-		vkFreeMemory(renderBuffer->vulkanSetup->device, textureImageMemory, nullptr);
+		vkDestroyImage(engine->vulkanSetup->device, textureImage, nullptr);
+		vkFreeMemory(engine->vulkanSetup->device, textureImageMemory, nullptr);
 	}
 
 	void RenderImage::CreateTextureImageView()
 	{
-		textureImageView = renderBuffer->vulkanSetup->
+		textureImageView = engine->vulkanSetup->
 			CreateImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	void RenderImage::DestroyTextureImageView()
 	{
-		vkDestroyImageView(renderBuffer->vulkanSetup->device, textureImageView, nullptr);
+		vkDestroyImageView(engine->vulkanSetup->device, textureImageView, nullptr);
 	}
 
 	void RenderImage::CreateTextureSampler()
@@ -84,7 +81,7 @@ namespace VlkEngine {
 		samplerInfo.anisotropyEnable = VK_TRUE;
 
 		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(renderBuffer->vulkanSetup->physicalDevice, &properties);
+		vkGetPhysicalDeviceProperties(engine->vulkanSetup->physicalDevice, &properties);
 		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
 		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -98,7 +95,7 @@ namespace VlkEngine {
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = 0.0f;
 
-		if (vkCreateSampler(renderBuffer->vulkanSetup->device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+		if (vkCreateSampler(engine->vulkanSetup->device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create texture sampler!");
 		}
 
@@ -106,12 +103,12 @@ namespace VlkEngine {
 
 	void RenderImage::DestroyTextureSampler()
 	{
-		vkDestroySampler(renderBuffer->vulkanSetup->device, textureSampler, nullptr);
+		vkDestroySampler(engine->vulkanSetup->device, textureSampler, nullptr);
 	}
 
 	void RenderImage::CreateDepthResource()
 	{
-		VulkanSetup* vulkanSetup = renderBuffer->vulkanSetup;
+		VulkanSetup* vulkanSetup = engine->vulkanSetup;
 
 		VkFormat depthFormat = vulkanSetup->FindDepthFormat();
 
@@ -122,9 +119,9 @@ namespace VlkEngine {
 
 	void RenderImage::DestroyDepthResource()
 	{
-		vkDestroyImageView(renderBuffer->vulkanSetup->device, depthImageView, nullptr);
-		vkDestroyImage(renderBuffer->vulkanSetup->device, depthImage, nullptr);
-		vkFreeMemory(renderBuffer->vulkanSetup->device, depthImageMemory, nullptr);
+		vkDestroyImageView(engine->vulkanSetup->device, depthImageView, nullptr);
+		vkDestroyImage(engine->vulkanSetup->device, depthImage, nullptr);
+		vkFreeMemory(engine->vulkanSetup->device, depthImageMemory, nullptr);
 	}
 
 	bool RenderImage::HasStencilComponent(VkFormat format)
@@ -149,28 +146,28 @@ namespace VlkEngine {
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateImage(renderBuffer->vulkanSetup->device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+		if (vkCreateImage(engine->vulkanSetup->device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create image!");
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(renderBuffer->vulkanSetup->device, image, &memRequirements);
+		vkGetImageMemoryRequirements(engine->vulkanSetup->device, image, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = renderBuffer->FindMemoryType(memRequirements.memoryTypeBits, properties);
+		allocInfo.memoryTypeIndex = engine->renderBuffer->FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(renderBuffer->vulkanSetup->device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+		if (vkAllocateMemory(engine->vulkanSetup->device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate image memory!");
 		}
 
-		vkBindImageMemory(renderBuffer->vulkanSetup->device, image, imageMemory, 0);
+		vkBindImageMemory(engine->vulkanSetup->device, image, imageMemory, 0);
 	}
 
 	void RenderImage::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
-		VkCommandBuffer commandBuffer = renderBuffer->PreSingleTimeCommands();
+		VkCommandBuffer commandBuffer = engine->renderBuffer->PreSingleTimeCommands();
 
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -220,12 +217,12 @@ namespace VlkEngine {
 			1, &barrier
 		);
 
-		renderBuffer->PostSingleTimeCommands(commandBuffer);
+		engine->renderBuffer->PostSingleTimeCommands(commandBuffer);
 	}
 
 	void RenderImage::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 	{
-		VkCommandBuffer commandBuffer = renderBuffer->PreSingleTimeCommands();
+		VkCommandBuffer commandBuffer = engine->renderBuffer->PreSingleTimeCommands();
 
 		VkBufferImageCopy region{};
 		region.bufferOffset = 0;
@@ -253,6 +250,6 @@ namespace VlkEngine {
 			&region
 		);
 
-		renderBuffer->PostSingleTimeCommands(commandBuffer);
+		engine->renderBuffer->PostSingleTimeCommands(commandBuffer);
 	}
 }

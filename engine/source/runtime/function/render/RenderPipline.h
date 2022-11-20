@@ -11,7 +11,7 @@ namespace VlkEngine {
 		friend class RenderBuffer;
 		friend class VulkanEngine;
 	public:
-		RenderPipline(RenderDescriptor* renderdescriptor);
+		RenderPipline(VulkanEngine* vlkengine);
 
 	public:
 		// Render Pass
@@ -23,7 +23,7 @@ namespace VlkEngine {
 		
 
 	private:
-		RenderDescriptor* renderDescriptor;
+		VulkanEngine* engine;
 
 		VkRenderPass renderPass;
 		VkPipelineLayout pipelineLayout;

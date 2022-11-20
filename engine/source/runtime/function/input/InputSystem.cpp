@@ -10,12 +10,20 @@ namespace VlkEngine {
 
 	void InputSystem::MouseMovement(GLFWwindow* window, double xpos, double ypos)
 	{
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+			isInitpos = false;
+			return;
+		}
+
 		if (!isInitpos) {
-			int x, y;
+			/*int x, y;
 			glfwGetWindowSize(window,&x, &y);
 			lastXpos = x / 2;
-			lastYpos = y / 2;
+			lastYpos = y / 2;*/
+			lastXpos = xpos;
+			lastYpos = ypos;
 			isInitpos = true;
+			return;
 		}
 		float deltaX = xpos - lastXpos;
 		float deltaY = ypos - lastYpos;
@@ -29,7 +37,7 @@ namespace VlkEngine {
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
-		if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		}
 		float movex = 0.0f, movey = 0.0f, movez = 0.0f;

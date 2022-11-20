@@ -1,8 +1,8 @@
 #include "RenderBuffer.h"
 
 namespace VlkEngine {
-	RenderBuffer::RenderBuffer(VulkanSetup* vulkansetup, RenderPipline* renderpipline):
-		vulkanSetup(vulkansetup),renderPipline(renderpipline)
+	RenderBuffer::RenderBuffer(VulkanEngine* vlkengine):
+		engine(vlkengine)
 	{
 
 	}
@@ -27,23 +27,23 @@ namespace VlkEngine {
 
 	void RenderBuffer::CreateFramebuffers()
 	{
-		swapChainFramebuffers.resize(vulkanSetup->swapChainImageViews.size());
-		for (size_t i = 0; i < vulkanSetup->swapChainImageViews.size(); i++) {
+		swapChainFramebuffers.resize(engine->vulkanSetup->swapChainImageViews.size());
+		for (size_t i = 0; i < engine->vulkanSetup->swapChainImageViews.size(); i++) {
 			std::array<VkImageView, 2> attachments = {
-				vulkanSetup->swapChainImageViews[i],
-				renderImage->depthImageView
+				engine->vulkanSetup->swapChainImageViews[i],
+				engine->renderImage->depthImageView
 			};
 
 			VkFramebufferCreateInfo framebufferInfo{};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = renderPipline->renderPass;
+			framebufferInfo.renderPass = engine->renderPipline->renderPass;
 			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 			framebufferInfo.pAttachments = attachments.data();
-			framebufferInfo.width = vulkanSetup->swapChainExtent.width;
-			framebufferInfo.height = vulkanSetup->swapChainExtent.height;
+			framebufferInfo.width = engine->vulkanSetup->swapChainExtent.width;
+			framebufferInfo.height = engine->vulkanSetup->swapChainExtent.height;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(vulkanSetup->device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+			if (vkCreateFramebuffer(engine->vulkanSetup->device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create framebuffer!");
 			}
 		}
@@ -53,27 +53,27 @@ namespace VlkEngine {
 	void RenderBuffer::DestroyFramebuffers()
 	{
 		for (auto framebuffer : swapChainFramebuffers) {
-			vkDestroyFramebuffer(vulkanSetup->device, framebuffer, nullptr);
+			vkDestroyFramebuffer(engine->vulkanSetup->device, framebuffer, nullptr);
 		}
 	}
 
 	void RenderBuffer::CreateCommandPool()
 	{
-		QueueFamilyIndices queueFamilyIndices = vulkanSetup->FindQueueFamilies(vulkanSetup->physicalDevice);
+		QueueFamilyIndices queueFamilyIndices = engine->vulkanSetup->FindQueueFamilies(engine->vulkanSetup->physicalDevice);
 
 		VkCommandPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(vulkanSetup->device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+		if (vkCreateCommandPool(engine->vulkanSetup->device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create command pool!");
 		}
 	}
 
 	void RenderBuffer::DestroyCommandPool()
 	{
-		vkDestroyCommandPool(vulkanSetup->device, commandPool, nullptr);
+		vkDestroyCommandPool(engine->vulkanSetup->device, commandPool, nullptr);
 	}
 
 	void RenderBuffer::CreateCommandBuffer()
@@ -86,7 +86,7 @@ namespace VlkEngine {
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
-		if (vkAllocateCommandBuffers(vulkanSetup->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+		if (vkAllocateCommandBuffers(engine->vulkanSetup->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
 	}
@@ -100,28 +100,28 @@ namespace VlkEngine {
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 		void* data;
-		vkMapMemory(vulkanSetup->device, stagingBufferMemory, 0, bufferSize, 0, &data);
+		vkMapMemory(engine->vulkanSetup->device, stagingBufferMemory, 0, bufferSize, 0, &data);
 		memcpy(data, vertices.data(), (size_t)bufferSize);
-		vkUnmapMemory(vulkanSetup->device, stagingBufferMemory);
+		vkUnmapMemory(engine->vulkanSetup->device, stagingBufferMemory);
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 	
 		CopyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
-		vkDestroyBuffer(vulkanSetup->device, stagingBuffer, nullptr);
-		vkFreeMemory(vulkanSetup->device, stagingBufferMemory, nullptr);
+		vkDestroyBuffer(engine->vulkanSetup->device, stagingBuffer, nullptr);
+		vkFreeMemory(engine->vulkanSetup->device, stagingBufferMemory, nullptr);
 	}
 
 	void RenderBuffer::DestroyVertexBuffer()
 	{
-		vkDestroyBuffer(vulkanSetup->device, vertexBuffer, nullptr);
-		vkFreeMemory(vulkanSetup->device, vertexBufferMemory, nullptr);
+		vkDestroyBuffer(engine->vulkanSetup->device, vertexBuffer, nullptr);
+		vkFreeMemory(engine->vulkanSetup->device, vertexBufferMemory, nullptr);
 	}
 
 	uint32_t RenderBuffer::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 	{
 		VkPhysicalDeviceMemoryProperties memProperties;
-		vkGetPhysicalDeviceMemoryProperties(vulkanSetup->physicalDevice, &memProperties);
+		vkGetPhysicalDeviceMemoryProperties(engine->vulkanSetup->physicalDevice, &memProperties);
 
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 			if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -142,23 +142,23 @@ namespace VlkEngine {
 		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(vulkanSetup->device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		if (vkCreateBuffer(engine->vulkanSetup->device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create buffer!");
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(vulkanSetup->device, buffer, &memRequirements);
+		vkGetBufferMemoryRequirements(engine->vulkanSetup->device, buffer, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(vulkanSetup->device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+		if (vkAllocateMemory(engine->vulkanSetup->device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate buffer memory!");
 		}
 
-		vkBindBufferMemory(vulkanSetup->device, buffer, bufferMemory, 0);
+		vkBindBufferMemory(engine->vulkanSetup->device, buffer, bufferMemory, 0);
 	}
 
 	void RenderBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -181,7 +181,7 @@ namespace VlkEngine {
 		allocInfo.commandBufferCount = 1;
 
 		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(vulkanSetup->device, &allocInfo, &commandBuffer);
+		vkAllocateCommandBuffers(engine->vulkanSetup->device, &allocInfo, &commandBuffer);
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -201,10 +201,10 @@ namespace VlkEngine {
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
-		vkQueueSubmit(vulkanSetup->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(vulkanSetup->graphicsQueue);
+		vkQueueSubmit(engine->vulkanSetup->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(engine->vulkanSetup->graphicsQueue);
 
-		vkFreeCommandBuffers(vulkanSetup->device, commandPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(engine->vulkanSetup->device, commandPool, 1, &commandBuffer);
 	}
 
 	void RenderBuffer::CreateIndexBuffer()
@@ -216,22 +216,22 @@ namespace VlkEngine {
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 		void* data;
-		vkMapMemory(vulkanSetup->device, stagingBufferMemory, 0, bufferSize, 0, &data);
+		vkMapMemory(engine->vulkanSetup->device, stagingBufferMemory, 0, bufferSize, 0, &data);
 		memcpy(data, indices.data(), (size_t)bufferSize);
-		vkUnmapMemory(vulkanSetup->device, stagingBufferMemory);
+		vkUnmapMemory(engine->vulkanSetup->device, stagingBufferMemory);
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
 
 		CopyBuffer(stagingBuffer, indexBuffer, bufferSize);
 
-		vkDestroyBuffer(vulkanSetup->device, stagingBuffer, nullptr);
-		vkFreeMemory(vulkanSetup->device, stagingBufferMemory, nullptr);
+		vkDestroyBuffer(engine->vulkanSetup->device, stagingBuffer, nullptr);
+		vkFreeMemory(engine->vulkanSetup->device, stagingBufferMemory, nullptr);
 	}
 
 	void RenderBuffer::DestroyIndexBuffer()
 	{
-		vkDestroyBuffer(vulkanSetup->device, indexBuffer, nullptr);
-		vkFreeMemory(vulkanSetup->device, indexBufferMemory, nullptr);
+		vkDestroyBuffer(engine->vulkanSetup->device, indexBuffer, nullptr);
+		vkFreeMemory(engine->vulkanSetup->device, indexBufferMemory, nullptr);
 	}
 
 	void RenderBuffer::CreateUniformBuffers()
@@ -245,15 +245,15 @@ namespace VlkEngine {
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 
-			vkMapMemory(vulkanSetup->device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+			vkMapMemory(engine->vulkanSetup->device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
 		}
 	}
 
 	void RenderBuffer::DestroyUniformBuffers()
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroyBuffer(vulkanSetup->device, uniformBuffers[i], nullptr);
-			vkFreeMemory(vulkanSetup->device, uniformBuffersMemory[i], nullptr);
+			vkDestroyBuffer(engine->vulkanSetup->device, uniformBuffers[i], nullptr);
+			vkFreeMemory(engine->vulkanSetup->device, uniformBuffersMemory[i], nullptr);
 		}
 	}
 }

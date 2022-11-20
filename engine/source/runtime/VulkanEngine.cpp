@@ -31,6 +31,10 @@ namespace VlkEngine {
         }
 	}
 
+	void VulkanEngine::KeyInputcallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+	}
+
 	void VulkanEngine::InitEngine()
     {
         glfwInit();
@@ -40,19 +44,21 @@ namespace VlkEngine {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, FramebufferResizeCallback); 
+        glfwSetKeyCallback(window, KeyInputcallback); 
+        glfwSetCursorPosCallback(window, MouseMovecallback);
 
         camera = new Camera(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 0.0f, 1.0f),
             glm::radians(45.0f),0.1f,10.0f);
 
         inputSystem = new InputSystem(camera);
-        glfwSetCursorPosCallback(window, MouseMovecallback);
+       
 
         vulkanSetup = new VulkanSetup(window);
-        renderDescriptor = new RenderDescriptor(vulkanSetup);
-        renderPipline = new RenderPipline(renderDescriptor);
-        renderBuffer = new RenderBuffer(vulkanSetup,renderPipline);
-        renderImage = new RenderImage(renderBuffer);
+        renderDescriptor = new RenderDescriptor(this);
+        renderPipline = new RenderPipline(this);
+        renderBuffer = new RenderBuffer(this);
+        renderImage = new RenderImage(this);
         vulkanSyncObject = new VulkanSyncObject(vulkanSetup);
         
     }
@@ -77,8 +83,8 @@ namespace VlkEngine {
     {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
-            inputSystem->ProcessInput(window);
             DrawFrame();
+            inputSystem->ProcessInput(window);
         }
         vkDeviceWaitIdle(vulkanSetup->device);
     }

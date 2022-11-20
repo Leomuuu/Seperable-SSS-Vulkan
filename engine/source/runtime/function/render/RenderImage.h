@@ -10,10 +10,10 @@ namespace VlkEngine {
 		friend class RenderDescriptor;
 		friend class RenderBuffer;
 	public:
-		RenderImage(RenderBuffer* renderbuffer);
+		RenderImage(VulkanEngine* vlkengine);
 
 	private:
-		RenderBuffer* renderBuffer;
+		VulkanEngine* engine;
 
 		// TextureImage
 		VkImage textureImage;

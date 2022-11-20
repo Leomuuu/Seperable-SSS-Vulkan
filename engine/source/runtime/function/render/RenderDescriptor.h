@@ -4,6 +4,7 @@
 #include "VulkanSetup.h"
 #include "RenderBuffer.h"
 #include "RenderImage.h"
+#include "../../VulkanEngine.h"
 
 namespace VlkEngine {
 
@@ -12,7 +13,7 @@ namespace VlkEngine {
 		friend class RenderBuffer;
 		friend class VulkanEngine;
 	public:
-		RenderDescriptor(VulkanSetup* vulkansetup);
+		RenderDescriptor(VulkanEngine* vlkengine);
 		void DestroyDescriptor();
 
 		// DescriptorSetLayout
@@ -23,7 +24,7 @@ namespace VlkEngine {
 		void CreateDescriptorSets(RenderBuffer* renderBuffer, RenderImage* renderImage);
 	
 	private:
-		VulkanSetup* vulkanSetup;
+		VulkanEngine* engine;
 
 		// DescriptorSetLayout
 		VkDescriptorSetLayout descriptorSetLayout;

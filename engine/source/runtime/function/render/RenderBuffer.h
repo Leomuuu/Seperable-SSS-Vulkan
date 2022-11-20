@@ -9,11 +9,9 @@ namespace VlkEngine {
 		friend class RenderDescriptor;
 		friend class RenderImage;
 		public:
-			RenderBuffer(VulkanSetup* vulkansetup,RenderPipline* renderpipline);
+			RenderBuffer(VulkanEngine* vlkengine);
 		private:
-			VulkanSetup* vulkanSetup;
-			RenderPipline* renderPipline;
-			RenderImage* renderImage;
+			VulkanEngine* engine;
 
 		public:
 			void CreateBuffers();

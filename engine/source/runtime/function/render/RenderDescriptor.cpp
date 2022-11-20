@@ -3,16 +3,16 @@
 namespace VlkEngine {
 
 
-	RenderDescriptor::RenderDescriptor(VulkanSetup* vulkansetup):
-		vulkanSetup(vulkansetup)
+	RenderDescriptor::RenderDescriptor(VulkanEngine* vlkengine):
+		engine(vlkengine)
 	{
 
 	}
 
 	void RenderDescriptor::DestroyDescriptor()
 	{
-		vkDestroyDescriptorPool(vulkanSetup->device, descriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(vulkanSetup->device, descriptorSetLayout, nullptr);
+		vkDestroyDescriptorPool(engine->vulkanSetup->device, descriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(engine->vulkanSetup->device, descriptorSetLayout, nullptr);
 	}
 
 	void RenderDescriptor::CreateDescriptorSetLayout()
@@ -38,7 +38,7 @@ namespace VlkEngine {
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		layoutInfo.pBindings = bindings.data();
 
-		if (vkCreateDescriptorSetLayout(vulkanSetup->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(engine->vulkanSetup->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 
@@ -60,7 +60,7 @@ namespace VlkEngine {
 		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-		if (vkCreateDescriptorPool(vulkanSetup->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+		if (vkCreateDescriptorPool(engine->vulkanSetup->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 	}
@@ -75,7 +75,7 @@ namespace VlkEngine {
 		allocInfo.pSetLayouts = layouts.data();
 
 		descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-		if (vkAllocateDescriptorSets(vulkanSetup->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+		if (vkAllocateDescriptorSets(engine->vulkanSetup->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
@@ -108,7 +108,7 @@ namespace VlkEngine {
 			descriptorWrites[1].descriptorCount = 1;
 			descriptorWrites[1].pImageInfo = &imageInfo;
 			
-			vkUpdateDescriptorSets(vulkanSetup->device, static_cast<uint32_t>(descriptorWrites.size()),
+			vkUpdateDescriptorSets(engine->vulkanSetup->device, static_cast<uint32_t>(descriptorWrites.size()),
 				descriptorWrites.data(), 0, nullptr);
 		}
 

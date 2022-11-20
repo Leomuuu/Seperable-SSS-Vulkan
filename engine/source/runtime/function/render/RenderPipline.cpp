@@ -4,8 +4,8 @@
 namespace VlkEngine {
 	
 
-	RenderPipline::RenderPipline(RenderDescriptor* renderdescriptor):
-		renderDescriptor(renderdescriptor)
+	RenderPipline::RenderPipline(VulkanEngine* vlkengine):
+		engine(vlkengine)
 	{
 
 	}
@@ -23,7 +23,7 @@ namespace VlkEngine {
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = renderDescriptor->vulkanSetup->FindDepthFormat();
+		depthAttachment.format = engine->vulkanSetup->FindDepthFormat();
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -64,14 +64,14 @@ namespace VlkEngine {
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(renderDescriptor->vulkanSetup->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(engine->vulkanSetup->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create render pass!");
 		}
 	}
 
 	void RenderPipline::DestroyRenderPass()
 	{
-		vkDestroyRenderPass(renderDescriptor->vulkanSetup->device, renderPass, nullptr);
+		vkDestroyRenderPass(engine->vulkanSetup->device, renderPass, nullptr);
 	}
 
 	void RenderPipline::CreateGraphicsPipeline(std::string& vertShaderPath,
@@ -193,10 +193,10 @@ namespace VlkEngine {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1; // Optional
-		pipelineLayoutInfo.pSetLayouts = &(renderDescriptor->descriptorSetLayout); // Optional
+		pipelineLayoutInfo.pSetLayouts = &(engine->renderDescriptor->descriptorSetLayout); // Optional
 		pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 		pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-		if (vkCreatePipelineLayout(renderDescriptor->vulkanSetup->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(engine->vulkanSetup->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
@@ -219,19 +219,19 @@ namespace VlkEngine {
 		// creating a new graphics pipeline by deriving from an existing pipeline is allowed in Vulkan
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional   
 		pipelineInfo.basePipelineIndex = -1; // Optional
-		if (vkCreateGraphicsPipelines(renderDescriptor->vulkanSetup->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(engine->vulkanSetup->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
-		vkDestroyShaderModule(renderDescriptor->vulkanSetup->device, fragShaderModule, nullptr);
-		vkDestroyShaderModule(renderDescriptor->vulkanSetup->device, vertShaderModule, nullptr);
+		vkDestroyShaderModule(engine->vulkanSetup->device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(engine->vulkanSetup->device, vertShaderModule, nullptr);
 	}
 
 
 	void RenderPipline::DestroyGraphicsPipeline()
 	{
-		vkDestroyPipeline(renderDescriptor->vulkanSetup->device, graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(renderDescriptor->vulkanSetup->device, pipelineLayout, nullptr);
+		vkDestroyPipeline(engine->vulkanSetup->device, graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(engine->vulkanSetup->device, pipelineLayout, nullptr);
 	}
 
 
@@ -244,7 +244,7 @@ namespace VlkEngine {
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(renderDescriptor->vulkanSetup->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(engine->vulkanSetup->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create shader module!");
 		}
 
