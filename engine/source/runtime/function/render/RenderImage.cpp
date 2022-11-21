@@ -11,8 +11,7 @@ namespace VlkEngine {
 	void RenderImage::CreateTextureImage()
 	{
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = FileService::LoadAssetImage("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/texture/human.jpg",
-			&texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = engine->modelManager->LoadModelTexture(&texWidth,&texHeight,&texChannels);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {

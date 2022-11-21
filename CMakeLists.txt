@@ -25,7 +25,7 @@ add_executable (${PROJECT_NAME} ${DIR_SRCS})
 # glfw
 # include_directories(${THIRD_PARTY_DIR}/glfw-3.3.8.bin.WIN64/include)
 # link_directories(${THIRD_PARTY_DIR}/glfw-3.3.8.bin.WIN64/lib-vc2019)
-target_link_libraries(${PROJECT_NAME}  glfw glm)
+target_link_libraries(${PROJECT_NAME}  glfw glm tinyobjloader)
 
 # vulkan SDK needed 
 find_package(Vulkan REQUIRED FATAL_ERROR)

@@ -6,7 +6,7 @@ add_library(runtime ${HEADER_FILES} ${SOURCE_FILES})
 
 target_include_directories(runtime PUBLIC ${RUNTIME_DIR}/function)
 
-target_link_libraries(runtime  glfw glm)
+target_link_libraries(runtime  glfw glm tinyobjloader)
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 include_directories(${Vulkan_INCLUDE_DIRS})

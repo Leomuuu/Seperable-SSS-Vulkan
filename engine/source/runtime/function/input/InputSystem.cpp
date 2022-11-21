@@ -29,7 +29,7 @@ namespace VlkEngine {
 		float deltaY = ypos - lastYpos;
 		lastXpos = xpos;
 		lastYpos = ypos;
-		mcamera->ProcessRotation(deltaX, deltaY);
+		mcamera->ProcessRotation(-deltaX, -deltaY);
 	}
 
 	void InputSystem::ProcessInput(GLFWwindow* window)

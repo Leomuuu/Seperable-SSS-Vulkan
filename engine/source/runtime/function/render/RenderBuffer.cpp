@@ -93,7 +93,7 @@ namespace VlkEngine {
 
 	void RenderBuffer::CreateVertexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+		VkDeviceSize bufferSize = sizeof(engine->modelManager->vertices[0]) * engine->modelManager->vertices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -101,7 +101,7 @@ namespace VlkEngine {
 
 		void* data;
 		vkMapMemory(engine->vulkanSetup->device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, vertices.data(), (size_t)bufferSize);
+		memcpy(data, engine->modelManager->vertices.data(), (size_t)bufferSize);
 		vkUnmapMemory(engine->vulkanSetup->device, stagingBufferMemory);
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
@@ -209,7 +209,7 @@ namespace VlkEngine {
 
 	void RenderBuffer::CreateIndexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		VkDeviceSize bufferSize = sizeof(engine->modelManager->indices[0]) * engine->modelManager->indices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -217,7 +217,7 @@ namespace VlkEngine {
 
 		void* data;
 		vkMapMemory(engine->vulkanSetup->device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices.data(), (size_t)bufferSize);
+		memcpy(data, engine->modelManager->indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(engine->vulkanSetup->device, stagingBufferMemory);
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);

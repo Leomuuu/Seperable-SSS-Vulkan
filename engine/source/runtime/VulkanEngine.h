@@ -8,6 +8,7 @@
 #include "function/render/RenderImage.h"
 #include "function/render/Camera.h"
 #include "function/input/InputSystem.h"
+#include "resource/ModelManager.h"
 
 
 
@@ -63,6 +64,9 @@ namespace VlkEngine {
 
         // input
         InputSystem* inputSystem;
+
+        // resource
+        ModelManager* modelManager;
 
     };
 }

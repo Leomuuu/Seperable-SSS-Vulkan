@@ -52,8 +52,12 @@ namespace VlkEngine {
             glm::radians(45.0f),0.1f,10.0f);
 
         inputSystem = new InputSystem(camera);
-       
 
+        modelManager = new ModelManager();
+        modelManager->SetModel(
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.obj",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.png");
+ 
         vulkanSetup = new VulkanSetup(window);
         renderDescriptor = new RenderDescriptor(this);
         renderPipline = new RenderPipline(this);
@@ -213,13 +217,13 @@ namespace VlkEngine {
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffer, renderBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffer, renderBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPipline->pipelineLayout,
             0, 1, &((renderDescriptor->descriptorSets)[currentFrame]), 0, nullptr);
 
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(modelManager->indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
