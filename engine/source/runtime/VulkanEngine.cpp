@@ -47,16 +47,16 @@ namespace VlkEngine {
         glfwSetKeyCallback(window, KeyInputcallback); 
         glfwSetCursorPosCallback(window, MouseMovecallback);
 
-        camera = new Camera(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-            glm::vec3(0.0f, 0.0f, 1.0f),
+        camera = new Camera(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f),
             glm::radians(45.0f),0.1f,10.0f);
 
         inputSystem = new InputSystem(camera);
 
         modelManager = new ModelManager();
         modelManager->SetModel(
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.obj",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.png");
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/head.OBJ",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/lambertian.jpg");
  
         vulkanSetup = new VulkanSetup(window);
         renderDescriptor = new RenderDescriptor(this);
