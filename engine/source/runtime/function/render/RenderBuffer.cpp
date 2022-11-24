@@ -236,16 +236,22 @@ namespace VlkEngine {
 
 	void RenderBuffer::CreateUniformBuffers()
 	{
-		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
+		VkDeviceSize bufferSize = sizeof(MVPMatrix);
 		uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 		uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
+		VkDeviceSize fragbufferSize = sizeof(FragUniform);
+		fraguniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		fraguniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+		fraguniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
-
 			vkMapMemory(engine->vulkanSetup->device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+
+			CreateBuffer(fragbufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, fraguniformBuffers[i], fraguniformBuffersMemory[i]);
+			vkMapMemory(engine->vulkanSetup->device, fraguniformBuffersMemory[i], 0, fragbufferSize, 0, &fraguniformBuffersMapped[i]);
 		}
 	}
 
@@ -254,6 +260,9 @@ namespace VlkEngine {
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			vkDestroyBuffer(engine->vulkanSetup->device, uniformBuffers[i], nullptr);
 			vkFreeMemory(engine->vulkanSetup->device, uniformBuffersMemory[i], nullptr);
+
+			vkDestroyBuffer(engine->vulkanSetup->device, fraguniformBuffers[i], nullptr);
+			vkFreeMemory(engine->vulkanSetup->device, fraguniformBuffersMemory[i], nullptr);
 		}
 	}
 }

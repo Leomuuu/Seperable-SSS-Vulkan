@@ -265,13 +265,17 @@ namespace VlkEngine {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        UniformBufferObject ubo{};
+        MVPMatrix ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = camera->GetViewMatrix();
         ubo.proj = glm::perspective(camera->Fov, vulkanSetup->swapChainExtent.width / (float)(vulkanSetup->swapChainExtent.height), camera->zNear, camera->zFar);
         ubo.proj[1][1] *= -1;
 
+        FragUniform fragubo{};
+        fragubo.viewPosition = camera->camPosition;
+
         memcpy(renderBuffer->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+        memcpy(renderBuffer->fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));
 
 
     }

@@ -82,11 +82,16 @@ namespace VlkEngine {
 	};
 
 
-	struct UniformBufferObject {
+	struct MVPMatrix {
 		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
+
+	struct FragUniform {
+		glm::vec3 viewPosition;
+	};
+
 }
 
 namespace std {

@@ -31,7 +31,15 @@ namespace VlkEngine {
 		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-		std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+		VkDescriptorSetLayoutBinding fraguboLayoutBinding{};
+		fraguboLayoutBinding.binding = 2;
+		fraguboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		fraguboLayoutBinding.descriptorCount = 1;
+		fraguboLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fraguboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+		std::array<VkDescriptorSetLayoutBinding, 3> bindings =
+		{ uboLayoutBinding, samplerLayoutBinding,fraguboLayoutBinding };
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -48,11 +56,13 @@ namespace VlkEngine {
 
 	void RenderDescriptor::CreateDescriptorPool()
 	{
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
+		std::array<VkDescriptorPoolSize, 3> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -83,14 +93,19 @@ namespace VlkEngine {
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = renderBuffer->uniformBuffers[i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
+			bufferInfo.range = sizeof(MVPMatrix);
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageInfo.imageView = renderImage->textureImageView;
 			imageInfo.sampler = renderImage->textureSampler;
 
-			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+			VkDescriptorBufferInfo fragbufferInfo{};
+			fragbufferInfo.buffer = renderBuffer->fraguniformBuffers[i];
+			fragbufferInfo.offset = 0;
+			fragbufferInfo.range = sizeof(FragUniform);
+
+			std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[0].dstSet = descriptorSets[i];
@@ -107,6 +122,14 @@ namespace VlkEngine {
 			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrites[1].descriptorCount = 1;
 			descriptorWrites[1].pImageInfo = &imageInfo;
+
+			descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[2].dstSet = descriptorSets[i];
+			descriptorWrites[2].dstBinding = 2;
+			descriptorWrites[2].dstArrayElement = 0;
+			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[2].descriptorCount = 1;
+			descriptorWrites[2].pBufferInfo = &fragbufferInfo;
 			
 			vkUpdateDescriptorSets(engine->vulkanSetup->device, static_cast<uint32_t>(descriptorWrites.size()),
 				descriptorWrites.data(), 0, nullptr);

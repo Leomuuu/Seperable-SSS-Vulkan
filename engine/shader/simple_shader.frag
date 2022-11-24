@@ -7,6 +7,10 @@ layout(location = 3) in vec2 fragTexCoord;
 
 layout(binding = 1) uniform sampler2D texSampler;
 
+layout(binding = 2) uniform FragUniform {
+    vec3 viewPosition;
+} fragubo;
+
 layout(location = 0) out vec4 outColor;
 
 void main() {
@@ -22,7 +26,7 @@ void main() {
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * color;
      // specular
-    vec3 viewDir = normalize(vec3(2.0,2.0,2.0) - fragPos);
+    vec3 viewDir = normalize( fragubo.viewPosition - fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     vec3 halfwayDir = normalize(lightDir + viewDir);  
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);

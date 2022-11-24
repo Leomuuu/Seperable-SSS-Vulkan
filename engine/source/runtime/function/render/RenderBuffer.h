@@ -62,6 +62,10 @@ namespace VlkEngine {
 			std::vector<VkBuffer> uniformBuffers;
 			std::vector<VkDeviceMemory> uniformBuffersMemory;
 			std::vector<void*> uniformBuffersMapped;
+			// fragment shader stage uniform buffer
+			std::vector<VkBuffer> fraguniformBuffers;
+			std::vector<VkDeviceMemory> fraguniformBuffersMemory;
+			std::vector<void*> fraguniformBuffersMapped;
 
 	};
 
