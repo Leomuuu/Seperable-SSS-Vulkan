@@ -32,6 +32,9 @@
 #include <chrono>
 
 
+// validation layer
+#define  NDEBUG
+
 namespace VlkEngine {
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -90,6 +93,7 @@ namespace VlkEngine {
 
 	struct FragUniform {
 		glm::vec3 viewPosition;
+		glm::vec3 lightPosition;
 	};
 
 }

@@ -9,6 +9,7 @@ layout(binding = 1) uniform sampler2D texSampler;
 
 layout(binding = 2) uniform FragUniform {
     vec3 viewPosition;
+    vec3 lightPosition;
 } fragubo;
 
 layout(location = 0) out vec4 outColor;
@@ -16,12 +17,11 @@ layout(location = 0) out vec4 outColor;
 void main() {
     
     vec3 color = texture(texSampler, fragTexCoord).rgb;
-    vec3 lightPos= vec3(2.0f,2.0f,2.0f);
 
     // ambient
     vec3 ambient = 0.05 * color;
     // diffuse
-    vec3 lightDir = normalize(lightPos - fragPos);
+    vec3 lightDir = normalize(fragubo.lightPosition - fragPos);
     vec3 normal = normalize(fragNormal);
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * color;

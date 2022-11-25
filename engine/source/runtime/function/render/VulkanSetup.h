@@ -1,7 +1,7 @@
 #pragma once
 #include "RenderHeader.h"
 
-#define  NDEBUG
+
 
 namespace VlkEngine {
 	struct QueueFamilyIndices {

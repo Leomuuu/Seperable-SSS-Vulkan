@@ -41,25 +41,25 @@ namespace VlkEngine {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, FramebufferResizeCallback); 
         glfwSetKeyCallback(window, KeyInputcallback); 
         glfwSetCursorPosCallback(window, MouseMovecallback);
 
-        camera = new Camera(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-            glm::vec3(0.0f, 0.0f, 1.0f),
+        camera = new Camera(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f),
             glm::radians(45.0f),0.1f,10.0f);
 
         inputSystem = new InputSystem(camera);
 
         modelManager = new ModelManager();
-        //modelManager->SetModel(
-        //    "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/head.OBJ",
-        //    "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/lambertian.jpg");
         modelManager->SetModel(
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/head.OBJ",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/lambertian.jpg");
+        /*modelManager->SetModel(
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.obj",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.png");
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.png");*/
 
 
         vulkanSetup = new VulkanSetup(window);
@@ -273,6 +273,7 @@ namespace VlkEngine {
 
         FragUniform fragubo{};
         fragubo.viewPosition = camera->camPosition;
+        fragubo.lightPosition = glm::vec3{ 2,2,2 };
 
         memcpy(renderBuffer->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
         memcpy(renderBuffer->fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));

@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include "../function/render/RenderHeader.h"
 
+#define CALCULATE_VERTEX_NORMAL
+
 namespace VlkEngine {
 	class ModelManager {
 		friend class VulkanEngine;
@@ -21,6 +23,9 @@ namespace VlkEngine {
 
 	private:
 		void LoadModel();
+
+		float CalcTriangleArea(glm::vec3 veca, glm::vec3 vecb, glm::vec3 vecc);
+		glm::vec3 CalcTriangleNormal(glm::vec3 veca, glm::vec3 vecb, glm::vec3 vecc);
 	};
 
 }
