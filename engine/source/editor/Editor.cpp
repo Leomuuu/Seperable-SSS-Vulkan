@@ -226,7 +226,9 @@ namespace VlkEngine {
 		cmdBufferBegin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		cmdBufferBegin.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		if (vkBeginCommandBuffer(uiCommandBuffers[bufferIndex], &cmdBufferBegin) != VK_SUCCESS) {
+		VkCommandBuffer commandBuffer = uiCommandBuffers[renderEngine->currentFrame];
+
+		if (vkBeginCommandBuffer(commandBuffer, &cmdBufferBegin) != VK_SUCCESS) {
 			throw std::runtime_error("Unable to start recording UI command buffer!");
 		}
 
@@ -240,15 +242,15 @@ namespace VlkEngine {
 		renderPassBeginInfo.clearValueCount = 1;
 		renderPassBeginInfo.pClearValues = &clearColor;
 
-		vkCmdBeginRenderPass(uiCommandBuffers[bufferIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		// Grab and record the draw data for Dear Imgui
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), uiCommandBuffers[bufferIndex]);
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 		// End and submit render pass
-		vkCmdEndRenderPass(uiCommandBuffers[bufferIndex]);
+		vkCmdEndRenderPass(commandBuffer);
 
-		if (vkEndCommandBuffer(uiCommandBuffers[bufferIndex]) != VK_SUCCESS) {
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to record command buffers!");
 		}
 	}

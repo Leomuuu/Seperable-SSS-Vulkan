@@ -10,7 +10,7 @@ namespace VlkEngine {
 
 	void InputSystem::MouseMovement(GLFWwindow* window, double xpos, double ypos)
 	{
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) {
 			isInitpos = false;
 			return;
 		}
@@ -34,12 +34,12 @@ namespace VlkEngine {
 
 	void InputSystem::ProcessInput(GLFWwindow* window)
 	{
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		/*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-		}
+		}*/
 		float movex = 0.0f, movey = 0.0f, movez = 0.0f;
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			movex += 0.01f;
