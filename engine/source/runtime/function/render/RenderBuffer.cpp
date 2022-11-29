@@ -163,21 +163,21 @@ namespace VlkEngine {
 
 	void RenderBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
-		VkCommandBuffer commandBuffer = PreSingleTimeCommands();
+		VkCommandBuffer commandBuffer = PreSingleTimeCommands(commandPool);
 
 		VkBufferCopy copyRegion{};
 		copyRegion.size = size;
 		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-		PostSingleTimeCommands(commandBuffer);
+		PostSingleTimeCommands(commandBuffer,commandPool);
 	}
 
-	VkCommandBuffer RenderBuffer::PreSingleTimeCommands()
+	VkCommandBuffer RenderBuffer::PreSingleTimeCommands(VkCommandPool cmdPool)
 	{
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = commandPool;
+		allocInfo.commandPool = cmdPool;
 		allocInfo.commandBufferCount = 1;
 
 		VkCommandBuffer commandBuffer;
@@ -192,7 +192,7 @@ namespace VlkEngine {
 		return commandBuffer;
 	}
 
-	void RenderBuffer::PostSingleTimeCommands(VkCommandBuffer commandBuffer)
+	void RenderBuffer::PostSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool cmdPool)
 	{
 		vkEndCommandBuffer(commandBuffer);
 
@@ -204,7 +204,7 @@ namespace VlkEngine {
 		vkQueueSubmit(engine->vulkanSetup->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 		vkQueueWaitIdle(engine->vulkanSetup->graphicsQueue);
 
-		vkFreeCommandBuffers(engine->vulkanSetup->device, commandPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(engine->vulkanSetup->device, cmdPool, 1, &commandBuffer);
 	}
 
 	void RenderBuffer::CreateIndexBuffer()

@@ -26,6 +26,7 @@ namespace VlkEngine {
 		friend class VulkanSyncObject;
 		friend class RenderDescriptor;
 		friend class RenderImage;
+		friend class Editor;
 	public:
 		VulkanSetup(GLFWwindow* glfwwindow);
 
@@ -48,6 +49,7 @@ namespace VlkEngine {
 		VkDevice device;
 		// queue handle
 		VkQueue graphicsQueue;
+		QueueFamilyIndices indices;
 		// window surface
 		VkSurfaceKHR surface;
 		GLFWwindow* window;

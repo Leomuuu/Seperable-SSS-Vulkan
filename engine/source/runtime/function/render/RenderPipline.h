@@ -10,6 +10,7 @@ namespace VlkEngine {
 	class RenderPipline {
 		friend class RenderBuffer;
 		friend class VulkanEngine;
+		friend class Editor;
 	public:
 		RenderPipline(VulkanEngine* vlkengine);
 

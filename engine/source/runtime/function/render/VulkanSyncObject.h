@@ -4,7 +4,7 @@
 namespace VlkEngine {
 	class VulkanSyncObject {
 		friend class VulkanEngine;
-
+		friend class Editor;
 	public:
 		VulkanSyncObject(VulkanSetup* vulkansetup);
 	private:

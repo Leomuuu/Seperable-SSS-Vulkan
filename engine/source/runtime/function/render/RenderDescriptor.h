@@ -12,6 +12,7 @@ namespace VlkEngine {
 		friend class RenderPipline;
 		friend class RenderBuffer;
 		friend class VulkanEngine;
+		friend class Editor;
 	public:
 		RenderDescriptor(VulkanEngine* vlkengine);
 		void DestroyDescriptor();

@@ -8,6 +8,7 @@ namespace VlkEngine {
 		friend class VulkanEngine;
 		friend class RenderDescriptor;
 		friend class RenderImage;
+		friend class Editor;
 		public:
 			RenderBuffer(VulkanEngine* vlkengine);
 		private:
@@ -41,8 +42,8 @@ namespace VlkEngine {
 			void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 				VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 			void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-			VkCommandBuffer PreSingleTimeCommands();
-			void PostSingleTimeCommands(VkCommandBuffer commandBuffer);
+			VkCommandBuffer PreSingleTimeCommands(VkCommandPool cmdPool);
+			void PostSingleTimeCommands(VkCommandBuffer commandBuffer, VkCommandPool cmdPool);
 
 
 		private:

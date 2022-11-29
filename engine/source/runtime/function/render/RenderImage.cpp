@@ -166,7 +166,7 @@ namespace VlkEngine {
 
 	void RenderImage::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
-		VkCommandBuffer commandBuffer = engine->renderBuffer->PreSingleTimeCommands();
+		VkCommandBuffer commandBuffer = engine->renderBuffer->PreSingleTimeCommands(engine->renderBuffer->commandPool);
 
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -216,12 +216,12 @@ namespace VlkEngine {
 			1, &barrier
 		);
 
-		engine->renderBuffer->PostSingleTimeCommands(commandBuffer);
+		engine->renderBuffer->PostSingleTimeCommands(commandBuffer, engine->renderBuffer->commandPool);
 	}
 
 	void RenderImage::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 	{
-		VkCommandBuffer commandBuffer = engine->renderBuffer->PreSingleTimeCommands();
+		VkCommandBuffer commandBuffer = engine->renderBuffer->PreSingleTimeCommands(engine->renderBuffer->commandPool);
 
 		VkBufferImageCopy region{};
 		region.bufferOffset = 0;
@@ -249,6 +249,6 @@ namespace VlkEngine {
 			&region
 		);
 
-		engine->renderBuffer->PostSingleTimeCommands(commandBuffer);
+		engine->renderBuffer->PostSingleTimeCommands(commandBuffer, engine->renderBuffer->commandPool);
 	}
 }

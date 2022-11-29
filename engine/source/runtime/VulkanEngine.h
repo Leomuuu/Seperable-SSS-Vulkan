@@ -19,6 +19,7 @@ namespace VlkEngine {
         friend class RenderPipline;
         friend class RenderBuffer;
         friend class RenderImage;
+        friend class Editor;
     public:
         void Run(); 
         

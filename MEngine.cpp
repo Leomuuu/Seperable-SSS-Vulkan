@@ -1,12 +1,14 @@
 ﻿#include "engine/source/runtime/VulkanEngine.h"
+#include "engine/source/editor/Editor.h"
 
 
 int main() {
 
     VlkEngine::VulkanEngine vEngine(1600,900,"MEngine");
+    VlkEngine::Editor editor(&vEngine);
 
     try {
-        vEngine.Run();
+        editor.Run();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

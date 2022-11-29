@@ -13,6 +13,7 @@ set(ENGINE_ROOT_DIR ${MENGINE_ROOT_DIR}/engine)
 set(THIRD_PARTY_DIR ${ENGINE_ROOT_DIR}/3rdparty)
 
 include_directories(${THIRD_PARTY_DIR}/stb)
+include_directories(${THIRD_PARTY_DIR}/imgui)
 
 add_subdirectory(engine)
 
@@ -33,7 +34,7 @@ include_directories(${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}  ${Vulkan_LIBRARIES})
 
 # other files
-target_link_libraries(${PROJECT_NAME}  runtime)
+target_link_libraries(${PROJECT_NAME}  runtime editor )
 
 # add_dependencies(${PROJECT_NAME} Shaders)
 
