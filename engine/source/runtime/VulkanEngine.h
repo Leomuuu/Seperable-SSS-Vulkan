@@ -68,5 +68,8 @@ namespace VlkEngine {
         // resource
         ModelManager* modelManager;
 
+        // light
+        glm::vec3 lightPosition=glm::vec3(2,2,2);
+
     };
 }

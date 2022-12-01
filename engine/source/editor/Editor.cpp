@@ -49,11 +49,11 @@ namespace VlkEngine {
 		ImGui::StyleColorsDark();
 
 		// Initialize some DearImgui specific resources
-		createUIDescriptorPool();
-		createUIRenderPass();
-		createUICommandPool(&uiCommandPool, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-		createUICommandBuffers();
-		createUIFramebuffers();
+		CreateUIDescriptorPool();
+		CreateUIRenderPass();
+		CreateUICommandPool(&uiCommandPool, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+		CreateUICommandBuffers();
+		CreateUIFramebuffers();
 
 		// Provide bind points from Vulkan API
 		ImGui_ImplGlfw_InitForVulkan(renderEngine->window, true);
@@ -75,7 +75,7 @@ namespace VlkEngine {
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
-	void Editor::createUIDescriptorPool()
+	void Editor::CreateUIDescriptorPool()
 	{
 		VkDescriptorPoolSize pool_sizes[] = {
 		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -101,7 +101,7 @@ namespace VlkEngine {
 			throw std::runtime_error("Cannot allocate UI descriptor pool!");
 		}
 	}
-	void Editor::createUIRenderPass()
+	void Editor::CreateUIRenderPass()
 	{
 		// Create an attachment description for the render pass
 		VkAttachmentDescription attachmentDescription = {};
@@ -150,7 +150,7 @@ namespace VlkEngine {
 			throw std::runtime_error("Unable to create UI render pass!");
 		}
 	}
-	void Editor::createUICommandPool(VkCommandPool* cmdPool, VkCommandPoolCreateFlags flags)
+	void Editor::CreateUICommandPool(VkCommandPool* cmdPool, VkCommandPoolCreateFlags flags)
 	{
 		VkCommandPoolCreateInfo commandPoolCreateInfo = {};
 		commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -161,7 +161,7 @@ namespace VlkEngine {
 			throw std::runtime_error("Could not create graphics command pool!");
 		}
 	}
-	void Editor::createUICommandBuffers()
+	void Editor::CreateUICommandBuffers()
 	{
 		uiCommandBuffers.resize(renderEngine->vulkanSetup->swapChainImageViews.size());
 
@@ -175,7 +175,7 @@ namespace VlkEngine {
 			throw std::runtime_error("Unable to allocate UI command buffers!");
 		}
 	}
-	void Editor::createUIFramebuffers()
+	void Editor::CreateUIFramebuffers()
 	{
 		// Create some UI frame buffers. These will be used in the render pass for the UI
 		uiFramebuffers.resize(renderEngine->vulkanSetup->swapChainImages.size());
@@ -202,17 +202,18 @@ namespace VlkEngine {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		static float f = 0.0f;
-		static int counter = 0;
+		static glm::vec3 campos = renderEngine->lightPosition;
+		static float camposx = campos.x;
+		static float camposy = campos.y;
+		static float camposz = campos.z;
 
 		ImGui::Begin("Renderer Options");
 		ImGui::Text("This is some useful text.");
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-		if (ImGui::Button("Button")) {
-			counter++;
-		}
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
+		ImGui::SliderFloat("lightposx", &camposx, -10.0f, 10.0f); 
+		ImGui::SliderFloat("lightposy", &camposy, -10.0f, 10.0f); 
+		ImGui::SliderFloat("lightposz", &camposz, -10.0f, 10.0f); 
+
+		renderEngine->lightPosition=glm::vec3(camposx, camposy, camposz);
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
@@ -220,7 +221,7 @@ namespace VlkEngine {
 		ImGui::Render();
 	}
 
-	void Editor::recordUICommands(uint32_t bufferIndex)
+	void Editor::RecordUICommandBuffer(uint32_t bufferIndex)
 	{
 		VkCommandBufferBeginInfo cmdBufferBegin = {};
 		cmdBufferBegin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -277,7 +278,7 @@ namespace VlkEngine {
 		vkResetCommandBuffer(renderEngine->renderBuffer->commandBuffers[renderEngine->currentFrame], 0);
 		renderEngine->RecordCommandBuffer(imageIndex);
 		vkResetCommandBuffer(uiCommandBuffers[renderEngine->currentFrame], 0);
-		recordUICommands(imageIndex);
+		RecordUICommandBuffer(imageIndex);
 
 		std::array<VkCommandBuffer, 2> cmdbuffers{renderEngine->renderBuffer->commandBuffers[renderEngine->currentFrame]
 			,uiCommandBuffers[renderEngine->currentFrame] };

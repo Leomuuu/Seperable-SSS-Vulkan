@@ -273,7 +273,7 @@ namespace VlkEngine {
 
         FragUniform fragubo{};
         fragubo.viewPosition = camera->camPosition;
-        fragubo.lightPosition = glm::vec3{ 2,2,2 };
+        fragubo.lightPosition =lightPosition;
 
         memcpy(renderBuffer->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
         memcpy(renderBuffer->fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));

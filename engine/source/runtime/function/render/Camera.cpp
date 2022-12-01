@@ -37,6 +37,16 @@ namespace VlkEngine {
 		if (Fov > 45.0f) Fov = 45.0f;
 	}
 
+	void Camera::SetPosition(glm::vec3 pos)
+	{
+		camPosition = pos;
+	}
+
+	glm::vec3 Camera::GetPosition()
+	{
+		return camPosition;
+	}
+
 	void Camera::ProcessMovement(float deltaX, float deltaY, float deltaZ)
 	{
 		camPosition += camForward * movespeedX * deltaX;

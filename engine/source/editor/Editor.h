@@ -19,13 +19,13 @@ namespace VlkEngine {
 
 	private:
 		void InitUI();
-		void createUIDescriptorPool();
-		void createUIRenderPass();
-		void createUICommandPool(VkCommandPool* cmdPool, VkCommandPoolCreateFlags flags);
-		void createUICommandBuffers();
-		void createUIFramebuffers();
+		void CreateUIDescriptorPool();
+		void CreateUIRenderPass();
+		void CreateUICommandPool(VkCommandPool* cmdPool, VkCommandPoolCreateFlags flags);
+		void CreateUICommandBuffers();
+		void CreateUIFramebuffers();
 		void DrawUI();
-		void recordUICommands(uint32_t bufferIndex);
+		void RecordUICommandBuffer(uint32_t bufferIndex);
 		void DrawFrame();
 
 	private:

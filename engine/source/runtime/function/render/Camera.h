@@ -13,6 +13,9 @@ namespace VlkEngine {
 		void ProcessMovement(float deltaX, float deltaY, float deltaZ);
 		void ProcessScale(float delta);
 
+		void SetPosition(glm::vec3 pos);
+		glm::vec3 GetPosition();
+
 	private:
 		glm::vec3 camPosition;
 		glm::vec3 camForward;
