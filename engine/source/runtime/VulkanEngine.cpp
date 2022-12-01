@@ -57,10 +57,6 @@ namespace VlkEngine {
         modelManager->SetModel(
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/head.OBJ",
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/lambertian.jpg");
-        /*modelManager->SetModel(
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.obj",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/viking_room/viking_room.png");*/
-
 
         vulkanSetup = new VulkanSetup(window);
         renderDescriptor = new RenderDescriptor(this);

@@ -28,6 +28,7 @@ namespace VlkEngine {
 		VkSampler textureSampler;
 		void CreateTextureSampler();
 		void DestroyTextureSampler();
+
 		// DepthBuffer
 		VkImage depthImage;
 		VkDeviceMemory depthImageMemory;

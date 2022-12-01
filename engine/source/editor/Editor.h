@@ -2,6 +2,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
+#include <time.h>
 
 namespace VlkEngine {
 	class Editor {
@@ -28,12 +29,16 @@ namespace VlkEngine {
 		void RecordUICommandBuffer(uint32_t bufferIndex);
 		void DrawFrame();
 
+		float Calfps(float DeltaTime);
+
 	private:
 		std::vector<VkFramebuffer> uiFramebuffers;
 		VkRenderPass uiRenderPass;
 		VkCommandPool uiCommandPool;
 		std::vector<VkCommandBuffer> uiCommandBuffers;
 		VkDescriptorPool uiDescriptorPool;
+
+		float fps=0;
 	};
 
 }

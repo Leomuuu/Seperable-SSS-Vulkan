@@ -1,5 +1,7 @@
 #include "Editor.h"
 
+#include<windows.h>
+
 namespace VlkEngine {
 	Editor::Editor(VulkanEngine* engine) :
 		renderEngine(engine)
@@ -26,11 +28,18 @@ namespace VlkEngine {
 
 	void Editor::MainLoop()
 	{
+		clock_t starttime, finishtime;
+		double deltatime;
+		starttime = clock();
 		while (!glfwWindowShouldClose(renderEngine->window)) {
 			glfwPollEvents();
 			DrawUI();
 			DrawFrame();
 			renderEngine->inputSystem->ProcessInput(renderEngine->window);
+			finishtime = clock();
+			deltatime = (double)(finishtime - starttime) / CLOCKS_PER_SEC;
+			fps = Calfps(deltatime);
+			starttime = clock();
 		}
 
 		vkDeviceWaitIdle(renderEngine->vulkanSetup->device);
@@ -202,20 +211,24 @@ namespace VlkEngine {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		static glm::vec3 campos = renderEngine->lightPosition;
-		static float camposx = campos.x;
-		static float camposy = campos.y;
-		static float camposz = campos.z;
+		static glm::vec3 lightpos = renderEngine->lightPosition;
+		static float lightposx = lightpos.x;
+		static float lightposy = lightpos.y;
+		static float lightposz = lightpos.z;
+		ImGui::Begin("Renderer Information");
+		ImGui::TextColored(ImVec4(1, 1, 0, 1), "Light Position");
+		ImGui::SliderFloat("lightposx", &lightposx, -10.0f, 10.0f);
+		ImGui::SliderFloat("lightposy", &lightposy, -10.0f, 10.0f);
+		ImGui::SliderFloat("lightposz", &lightposz, -10.0f, 10.0f);
+		renderEngine->lightPosition=glm::vec3(lightposx, lightposy, lightposz);
 
-		ImGui::Begin("Renderer Options");
-		ImGui::Text("This is some useful text.");
-		ImGui::SliderFloat("lightposx", &camposx, -10.0f, 10.0f); 
-		ImGui::SliderFloat("lightposy", &camposy, -10.0f, 10.0f); 
-		ImGui::SliderFloat("lightposz", &camposz, -10.0f, 10.0f); 
+		ImGui::TextColored(ImVec4(1, 1, 0, 1),"Camera Position");
+		ImGui::Text("x: %.3f", renderEngine->camera->GetPosition().x);
+		ImGui::Text("y: %.3f", renderEngine->camera->GetPosition().y);
+		ImGui::Text("z: %.3f", renderEngine->camera->GetPosition().z);
 
-		renderEngine->lightPosition=glm::vec3(camposx, camposy, camposz);
-
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::TextColored(ImVec4(1, 1, 0, 1), "FrameRate");
+		ImGui::Text("%.3f fps",fps);
 		ImGui::End();
 
 		ImGui::Render();
@@ -319,5 +332,23 @@ namespace VlkEngine {
 		}
 
 		renderEngine->currentFrame = (renderEngine->currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	}
+
+	float Editor::Calfps(float DeltaTime)
+	{
+		static float avgDuration = 0.f;
+		static float alpha = 1.f / 100.f; // 采样数设置为100
+		static int frameCount = 0;
+
+		++frameCount;
+
+		int fps = 0;
+		if (frameCount==1){
+			avgDuration = DeltaTime;
+		}
+		else{
+			avgDuration = avgDuration * (1 - alpha) + DeltaTime * alpha;
+		}
+		return (1.f / avgDuration);
 	}
 }
