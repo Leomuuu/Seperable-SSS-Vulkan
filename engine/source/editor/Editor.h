@@ -19,10 +19,15 @@ namespace VlkEngine {
 		void ShutDownEditor();
 
 	private:
-		void InitUI();
+		void StartUI();
+		void ShutdownUI();
+
 		void CreateUIDescriptorPool();
+		void DestroyUIDescriptorPool();
 		void CreateUIRenderPass();
+		void DestroyUIRenderPass();
 		void CreateUICommandPool(VkCommandPool* cmdPool, VkCommandPoolCreateFlags flags);
+		void DestroyUICommandPool();
 		void CreateUICommandBuffers();
 		void CreateUIFramebuffers();
 		void DestroyUIFramebuffers();

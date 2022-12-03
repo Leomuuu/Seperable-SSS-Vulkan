@@ -23,7 +23,7 @@ namespace VlkEngine {
 		if (renderEngine) {
 			renderEngine->StartEngine();
 		}
-		InitUI();
+		StartUI();
 	}
 
 	void Editor::MainLoop()
@@ -47,11 +47,13 @@ namespace VlkEngine {
 
 	void Editor::ShutDownEditor()
 	{
+		ShutdownUI();
 		if (renderEngine) 
 			renderEngine->ShutDownEngine();
+		
 	}
 
-	void Editor::InitUI()
+	void Editor::StartUI()
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -84,6 +86,14 @@ namespace VlkEngine {
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
+	void Editor::ShutdownUI()
+	{
+		void DestroyUIDescriptorPool();
+		void DestroyUICommandPool();
+		void DestroyUIFramebuffers();
+		void DestroyUIRenderPass();
+	}
+
 	void Editor::CreateUIDescriptorPool()
 	{
 		VkDescriptorPoolSize pool_sizes[] = {
@@ -110,6 +120,12 @@ namespace VlkEngine {
 			throw std::runtime_error("Cannot allocate UI descriptor pool!");
 		}
 	}
+
+	void Editor::DestroyUIDescriptorPool()
+	{
+		vkDestroyDescriptorPool(renderEngine->vulkanBase->device, uiDescriptorPool, nullptr);
+	}
+
 	void Editor::CreateUIRenderPass()
 	{
 		// Create an attachment description for the render pass
@@ -159,6 +175,13 @@ namespace VlkEngine {
 			throw std::runtime_error("Unable to create UI render pass!");
 		}
 	}
+
+	void Editor::DestroyUIRenderPass()
+	{
+		vkDestroyRenderPass(renderEngine->vulkanBase->device, uiRenderPass, nullptr);
+
+	} 
+
 	void Editor::CreateUICommandPool(VkCommandPool* cmdPool, VkCommandPoolCreateFlags flags)
 	{
 		VkCommandPoolCreateInfo commandPoolCreateInfo = {};
@@ -170,6 +193,12 @@ namespace VlkEngine {
 			throw std::runtime_error("Could not create graphics command pool!");
 		}
 	}
+
+	void Editor::DestroyUICommandPool()
+	{
+		vkDestroyCommandPool(renderEngine->vulkanBase->device, uiCommandPool, nullptr);
+	}
+
 	void Editor::CreateUICommandBuffers()
 	{
 		uiCommandBuffers.resize(renderEngine->vulkanBase->swapChainImageViews.size());
@@ -184,6 +213,7 @@ namespace VlkEngine {
 			throw std::runtime_error("Unable to allocate UI command buffers!");
 		}
 	}
+
 	void Editor::CreateUIFramebuffers()
 	{
 		// Create some UI frame buffers. These will be used in the render pass for the UI

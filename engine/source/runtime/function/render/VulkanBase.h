@@ -20,6 +20,7 @@ namespace VlkEngine {
 	};
 
 	class VulkanBase {
+
 		friend class VulkanEngine;
 		friend class Editor;
 	protected:
@@ -80,7 +81,7 @@ namespace VlkEngine {
 		// index buffer
 		VkBuffer indexBuffer;
 		VkDeviceMemory indexBufferMemory;
-		// uniform buffer
+		// vertex shader stage uniform buffer
 		std::vector<VkBuffer> uniformBuffers;
 		std::vector<VkDeviceMemory> uniformBuffersMemory;
 		std::vector<void*> uniformBuffersMapped;
