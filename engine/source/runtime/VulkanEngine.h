@@ -1,25 +1,15 @@
 #pragma once
 
-#include "function/render/VulkanSetup.h"
-#include "function/render/RenderPipline.h"
-#include "function/render/RenderBuffer.h"
-#include "function/render/VulkanSyncObject.h"
-#include "function/render/RenderDescriptor.h"
-#include "function/render/RenderImage.h"
+#include "function/render/VulkanBase.h"
 #include "function/render/Camera.h"
 #include "function/input/InputSystem.h"
 #include "resource/ModelManager.h"
 
 
 namespace VlkEngine {
-    
-
     class VulkanEngine {
-        friend class RenderDescriptor;
-        friend class RenderPipline;
-        friend class RenderBuffer;
-        friend class RenderImage;
         friend class Editor;
+        friend class VulkanBase;
     public:
         void Run(); 
         
@@ -51,12 +41,7 @@ namespace VlkEngine {
 
         // render
         uint32_t currentFrame = 0;
-        VulkanSetup* vulkanSetup;
-        RenderPipline* renderPipline;
-        RenderBuffer* renderBuffer;
-        RenderImage* renderImage;
-        RenderDescriptor* renderDescriptor;
-        VulkanSyncObject* vulkanSyncObject;
+        VulkanBase* vulkanBase;
         bool framebufferResized = false;
 
         // camera

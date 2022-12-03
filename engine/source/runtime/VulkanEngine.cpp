@@ -4,10 +4,12 @@ namespace VlkEngine {
     {
         InitEngine();
     }
+
     VulkanEngine::~VulkanEngine()
     {
-        delete vulkanSetup;
+        delete vulkanBase;
     }
+
     void VulkanEngine::Run()
     {
         StartEngine();
@@ -58,31 +60,15 @@ namespace VlkEngine {
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/head.OBJ",
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/lambertian.jpg");
 
-        vulkanSetup = new VulkanSetup(window);
-        renderDescriptor = new RenderDescriptor(this);
-        renderPipline = new RenderPipline(this);
-        renderBuffer = new RenderBuffer(this);
-        renderImage = new RenderImage(this);
-        vulkanSyncObject = new VulkanSyncObject(vulkanSetup);
+        vulkanBase = new VulkanBase(window, this);
         
     }
+
     void VulkanEngine::StartEngine()
     {
-        vulkanSetup->InitVulkan();
-        renderPipline->CreateRenderPass(vulkanSetup->swapChainImageFormat);
-        renderDescriptor->CreateDescriptorSetLayout();
-        renderPipline->CreateGraphicsPipeline(
-            std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.vert.spv"),
-            std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.frag.spv"));
-        renderImage->CreateDepthResource();
-        renderBuffer->CreateBuffers();
-        renderImage->CreateTextureImage();
-        renderImage->CreateTextureImageView();
-        renderImage->CreateTextureSampler();
-        renderDescriptor->CreateDescriptorPool();
-        renderDescriptor->CreateDescriptorSets(renderBuffer,renderImage);
-        vulkanSyncObject->CreateSyncObjects();
+        vulkanBase->StartVulkan();
     }
+
     void VulkanEngine::MainLoop()
     {
         while (!glfwWindowShouldClose(window)) {
@@ -90,20 +76,12 @@ namespace VlkEngine {
             DrawFrame();
             inputSystem->ProcessInput(window);
         }
-        vkDeviceWaitIdle(vulkanSetup->device);
+        vkDeviceWaitIdle(vulkanBase->device);
     }
+
     void VulkanEngine::ShutDownEngine()
     {
-        vulkanSyncObject->DestroySyncObjects();
-        renderImage->DestroyDepthResource();
-        renderDescriptor->DestroyDescriptor();
-        renderImage->DestroyTextureSampler();
-        renderImage->DestroyTextureImageView();
-        renderImage->DestroyTextureImage();
-        renderBuffer->DestroyBuffers();
-        renderPipline->DestroyGraphicsPipeline();
-        renderPipline->DestroyRenderPass();
-        vulkanSetup->ShutDownVulkan();
+        vulkanBase->ShutDownVulkan();
         
         glfwDestroyWindow(window);
         glfwTerminate();
@@ -112,11 +90,11 @@ namespace VlkEngine {
 	
 	void VulkanEngine::DrawFrame()
 	{
-        vkWaitForFences(vulkanSetup->device, 1, &(vulkanSyncObject->inFlightFences[currentFrame]), VK_TRUE, UINT64_MAX);
+        vkWaitForFences(vulkanBase->device, 1, &(vulkanBase->inFlightFences[currentFrame]), VK_TRUE, UINT64_MAX);
         
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(vulkanSetup->device, vulkanSetup->swapChain,
-            UINT64_MAX, vulkanSyncObject->imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(vulkanBase->device, vulkanBase->swapChain,
+            UINT64_MAX, vulkanBase->imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             WindowSurfaceChange();
             return;
@@ -127,24 +105,24 @@ namespace VlkEngine {
 
         UpdateUniformBuffer(currentFrame);
         
-        vkResetFences(vulkanSetup->device, 1, &(vulkanSyncObject->inFlightFences[currentFrame]));
+        vkResetFences(vulkanBase->device, 1, &(vulkanBase->inFlightFences[currentFrame]));
         
-        vkResetCommandBuffer(renderBuffer->commandBuffers[currentFrame], 0);
+        vkResetCommandBuffer(vulkanBase->commandBuffers[currentFrame], 0);
         RecordCommandBuffer(imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        VkSemaphore waitSemaphores[] = { vulkanSyncObject->imageAvailableSemaphores[currentFrame] };
+        VkSemaphore waitSemaphores[] = { vulkanBase->imageAvailableSemaphores[currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &(renderBuffer->commandBuffers[currentFrame]);
-        VkSemaphore signalSemaphores[] = { vulkanSyncObject->renderFinishedSemaphores[currentFrame] };
+        submitInfo.pCommandBuffers = &(vulkanBase->commandBuffers[currentFrame]);
+        VkSemaphore signalSemaphores[] = { vulkanBase->renderFinishedSemaphores[currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
-        if (vkQueueSubmit(vulkanSetup->graphicsQueue, 1, &submitInfo, vulkanSyncObject->inFlightFences[currentFrame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(vulkanBase->graphicsQueue, 1, &submitInfo, vulkanBase->inFlightFences[currentFrame]) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -152,13 +130,13 @@ namespace VlkEngine {
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
-        VkSwapchainKHR swapChains[] = { vulkanSetup->swapChain };
+        VkSwapchainKHR swapChains[] = { vulkanBase->swapChain };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr; // Optional
 
-        result = vkQueuePresentKHR(vulkanSetup->presentQueue, &presentInfo);
+        result = vkQueuePresentKHR(vulkanBase->presentQueue, &presentInfo);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
             framebufferResized = false;
             WindowSurfaceChange();
@@ -172,7 +150,7 @@ namespace VlkEngine {
 
 	void VulkanEngine::RecordCommandBuffer(uint32_t imageIndex)
 	{
-        VkCommandBuffer commandBuffer = renderBuffer->commandBuffers[currentFrame];
+        VkCommandBuffer commandBuffer = vulkanBase->commandBuffers[currentFrame];
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -189,40 +167,39 @@ namespace VlkEngine {
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPipline->renderPass;
-        renderPassInfo.framebuffer = renderBuffer->swapChainFramebuffers[imageIndex];
+        renderPassInfo.renderPass = vulkanBase->renderPass;
+        renderPassInfo.framebuffer = vulkanBase->swapChainFramebuffers[imageIndex];
         renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = vulkanSetup->swapChainExtent;
+        renderPassInfo.renderArea.extent = vulkanBase->swapChainExtent;
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPipline->graphicsPipeline);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanBase->graphicsPipeline);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = static_cast<float>(vulkanSetup->swapChainExtent.width);
-        viewport.height = static_cast<float>(vulkanSetup->swapChainExtent.height);
+        viewport.width = static_cast<float>(vulkanBase->swapChainExtent.width);
+        viewport.height = static_cast<float>(vulkanBase->swapChainExtent.height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };
-        scissor.extent = vulkanSetup->swapChainExtent;
+        scissor.extent = vulkanBase->swapChainExtent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkBuffer vertexBuffers[] = { renderBuffer->vertexBuffer };
+        VkBuffer vertexBuffers[] = { vulkanBase->vertexBuffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffer, renderBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, vulkanBase->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPipline->pipelineLayout,
-            0, 1, &((renderDescriptor->descriptorSets)[currentFrame]), 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanBase->pipelineLayout,
+            0, 1, &((vulkanBase->descriptorSets)[currentFrame]), 0, nullptr);
 
-        //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(modelManager->indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
@@ -241,18 +218,17 @@ namespace VlkEngine {
             glfwWaitEvents();
         }
 
-        vkDeviceWaitIdle(vulkanSetup->device);
+        vkDeviceWaitIdle(vulkanBase->device);
 
-        renderImage->DestroyDepthResource();
-        renderBuffer->DestroyFramebuffers();
-        vulkanSetup->DestroyImageViews();
-        vulkanSetup->DestroySwapChain();
+        vulkanBase->DestroyDepthResource();
+        vulkanBase->DestroyFramebuffers();
+        vulkanBase->DestroyImageViews();
+        vulkanBase->DestroySwapChain();
 
-        vulkanSetup->CreateSwapChain();
-        vulkanSetup->CreateImageViews();
-        renderImage->CreateDepthResource();
-        renderBuffer->CreateFramebuffers();
-
+        vulkanBase->CreateSwapChain();
+        vulkanBase->CreateImageViews();
+        vulkanBase->CreateDepthResource();
+        vulkanBase->CreateFramebuffers();
 	}
 
 	void VulkanEngine::UpdateUniformBuffer(uint32_t currentImage)
@@ -264,15 +240,15 @@ namespace VlkEngine {
         MVPMatrix ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = camera->GetViewMatrix();
-        ubo.proj = glm::perspective(camera->Fov, vulkanSetup->swapChainExtent.width / (float)(vulkanSetup->swapChainExtent.height), camera->zNear, camera->zFar);
+        ubo.proj = glm::perspective(camera->Fov, vulkanBase->swapChainExtent.width / (float)(vulkanBase->swapChainExtent.height), camera->zNear, camera->zFar);
         ubo.proj[1][1] *= -1;
 
         FragUniform fragubo{};
         fragubo.viewPosition = camera->camPosition;
         fragubo.lightPosition =lightPosition;
 
-        memcpy(renderBuffer->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-        memcpy(renderBuffer->fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));
+        memcpy(vulkanBase->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+        memcpy(vulkanBase->fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));
 
 
     }

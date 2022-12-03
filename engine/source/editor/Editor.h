@@ -25,8 +25,11 @@ namespace VlkEngine {
 		void CreateUICommandPool(VkCommandPool* cmdPool, VkCommandPoolCreateFlags flags);
 		void CreateUICommandBuffers();
 		void CreateUIFramebuffers();
-		void DrawUI();
+		void DestroyUIFramebuffers();
 		void RecordUICommandBuffer(uint32_t bufferIndex);
+		void WindowSurfaceChange();
+
+		void DrawUI();
 		void DrawFrame();
 
 		float Calfps(float DeltaTime);

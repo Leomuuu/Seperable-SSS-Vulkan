@@ -42,7 +42,7 @@ namespace VlkEngine {
 			starttime = clock();
 		}
 
-		vkDeviceWaitIdle(renderEngine->vulkanSetup->device);
+		vkDeviceWaitIdle(renderEngine->vulkanBase->device);
 	}
 
 	void Editor::ShutDownEditor()
@@ -67,20 +67,20 @@ namespace VlkEngine {
 		// Provide bind points from Vulkan API
 		ImGui_ImplGlfw_InitForVulkan(renderEngine->window, true);
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance = renderEngine->vulkanSetup->instance;
-		init_info.PhysicalDevice = renderEngine->vulkanSetup->physicalDevice;
-		init_info.Device = renderEngine->vulkanSetup->device;
-		init_info.QueueFamily = renderEngine->vulkanSetup->indices.graphicsFamily.value();
-		init_info.Queue = renderEngine->vulkanSetup->graphicsQueue;
+		init_info.Instance = renderEngine->vulkanBase->instance;
+		init_info.PhysicalDevice = renderEngine->vulkanBase->physicalDevice;
+		init_info.Device = renderEngine->vulkanBase->device;
+		init_info.QueueFamily = renderEngine->vulkanBase->indices.graphicsFamily.value();
+		init_info.Queue = renderEngine->vulkanBase->graphicsQueue;
 		init_info.DescriptorPool = uiDescriptorPool;
 		init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
 		init_info.ImageCount = MAX_FRAMES_IN_FLIGHT;
 		ImGui_ImplVulkan_Init(&init_info, uiRenderPass);
 
 		// Upload the fonts for DearImgui
-		VkCommandBuffer commandBuffer = renderEngine->renderBuffer->PreSingleTimeCommands(uiCommandPool);
+		VkCommandBuffer commandBuffer = renderEngine->vulkanBase->PreSingleTimeCommands(uiCommandPool);
 		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-		renderEngine->renderBuffer->PostSingleTimeCommands(commandBuffer, uiCommandPool);
+		renderEngine->vulkanBase->PostSingleTimeCommands(commandBuffer, uiCommandPool);
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
@@ -106,7 +106,7 @@ namespace VlkEngine {
 		pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 		pool_info.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(pool_sizes));
 		pool_info.pPoolSizes = pool_sizes;
-		if (vkCreateDescriptorPool(renderEngine->vulkanSetup->device, &pool_info, nullptr, &uiDescriptorPool) != VK_SUCCESS) {
+		if (vkCreateDescriptorPool(renderEngine->vulkanBase->device, &pool_info, nullptr, &uiDescriptorPool) != VK_SUCCESS) {
 			throw std::runtime_error("Cannot allocate UI descriptor pool!");
 		}
 	}
@@ -114,7 +114,7 @@ namespace VlkEngine {
 	{
 		// Create an attachment description for the render pass
 		VkAttachmentDescription attachmentDescription = {};
-		attachmentDescription.format = renderEngine->vulkanSetup->swapChainImageFormat;
+		attachmentDescription.format = renderEngine->vulkanBase->swapChainImageFormat;
 		attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
 		attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD; // Need UI to be drawn on top of main
 		attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -155,7 +155,7 @@ namespace VlkEngine {
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &subpassDependency;
 
-		if (vkCreateRenderPass(renderEngine->vulkanSetup->device, &renderPassInfo, nullptr, &uiRenderPass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(renderEngine->vulkanBase->device, &renderPassInfo, nullptr, &uiRenderPass) != VK_SUCCESS) {
 			throw std::runtime_error("Unable to create UI render pass!");
 		}
 	}
@@ -163,16 +163,16 @@ namespace VlkEngine {
 	{
 		VkCommandPoolCreateInfo commandPoolCreateInfo = {};
 		commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		commandPoolCreateInfo.queueFamilyIndex = renderEngine->vulkanSetup->indices.graphicsFamily.value();
+		commandPoolCreateInfo.queueFamilyIndex = renderEngine->vulkanBase->indices.graphicsFamily.value();
 		commandPoolCreateInfo.flags = flags;
 
-		if (vkCreateCommandPool(renderEngine->vulkanSetup->device, &commandPoolCreateInfo, nullptr, cmdPool) != VK_SUCCESS) {
+		if (vkCreateCommandPool(renderEngine->vulkanBase->device, &commandPoolCreateInfo, nullptr, cmdPool) != VK_SUCCESS) {
 			throw std::runtime_error("Could not create graphics command pool!");
 		}
 	}
 	void Editor::CreateUICommandBuffers()
 	{
-		uiCommandBuffers.resize(renderEngine->vulkanSetup->swapChainImageViews.size());
+		uiCommandBuffers.resize(renderEngine->vulkanBase->swapChainImageViews.size());
 
 		VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
 		commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -180,28 +180,35 @@ namespace VlkEngine {
 		commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		commandBufferAllocateInfo.commandBufferCount = static_cast<uint32_t>(uiCommandBuffers.size());
 
-		if (vkAllocateCommandBuffers(renderEngine->vulkanSetup->device, &commandBufferAllocateInfo, uiCommandBuffers.data()) != VK_SUCCESS) {
+		if (vkAllocateCommandBuffers(renderEngine->vulkanBase->device, &commandBufferAllocateInfo, uiCommandBuffers.data()) != VK_SUCCESS) {
 			throw std::runtime_error("Unable to allocate UI command buffers!");
 		}
 	}
 	void Editor::CreateUIFramebuffers()
 	{
 		// Create some UI frame buffers. These will be used in the render pass for the UI
-		uiFramebuffers.resize(renderEngine->vulkanSetup->swapChainImages.size());
+		uiFramebuffers.resize(renderEngine->vulkanBase->swapChainImages.size());
 		VkImageView attachment[1];
 		VkFramebufferCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		info.renderPass = uiRenderPass;
 		info.attachmentCount = 1;
 		info.pAttachments = attachment;
-		info.width = renderEngine->vulkanSetup->swapChainExtent.width;
-		info.height = renderEngine->vulkanSetup->swapChainExtent.height;
+		info.width = renderEngine->vulkanBase->swapChainExtent.width;
+		info.height = renderEngine->vulkanBase->swapChainExtent.height;
 		info.layers = 1;
-		for (uint32_t i = 0; i < renderEngine->vulkanSetup->swapChainImages.size(); ++i) {
-			attachment[0] = renderEngine->vulkanSetup->swapChainImageViews[i];
-			if (vkCreateFramebuffer(renderEngine->vulkanSetup->device, &info, nullptr, &uiFramebuffers[i]) != VK_SUCCESS) {
+		for (uint32_t i = 0; i < renderEngine->vulkanBase->swapChainImages.size(); ++i) {
+			attachment[0] = renderEngine->vulkanBase->swapChainImageViews[i];
+			if (vkCreateFramebuffer(renderEngine->vulkanBase->device, &info, nullptr, &uiFramebuffers[i]) != VK_SUCCESS) {
 				throw std::runtime_error("Unable to create UI frame buffers!");
 			}
+		}
+	}
+
+	void Editor::DestroyUIFramebuffers()
+	{
+		for (auto framebuffer : uiFramebuffers) {
+			vkDestroyFramebuffer(renderEngine->vulkanBase->device, framebuffer, nullptr);
 		}
 	}
 
@@ -251,8 +258,8 @@ namespace VlkEngine {
 		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassBeginInfo.renderPass = uiRenderPass;
 		renderPassBeginInfo.framebuffer = uiFramebuffers[bufferIndex];
-		renderPassBeginInfo.renderArea.extent.width = renderEngine->vulkanSetup->swapChainExtent.width;
-		renderPassBeginInfo.renderArea.extent.height = renderEngine->vulkanSetup->swapChainExtent.height;
+		renderPassBeginInfo.renderArea.extent.width = renderEngine->vulkanBase->swapChainExtent.width;
+		renderPassBeginInfo.renderArea.extent.height = renderEngine->vulkanBase->swapChainExtent.height;
 		renderPassBeginInfo.clearValueCount = 1;
 		renderPassBeginInfo.pClearValues = &clearColor;
 
@@ -269,15 +276,40 @@ namespace VlkEngine {
 		}
 	}
 
+	void Editor::WindowSurfaceChange()
+	{
+		int width = 0, height = 0;
+		glfwGetFramebufferSize(renderEngine->vulkanBase->window, &width, &height);
+		while (width == 0 || height == 0) {
+			glfwGetFramebufferSize(renderEngine->vulkanBase->window, &width, &height);
+			glfwWaitEvents();
+		}
+
+		vkDeviceWaitIdle(renderEngine->vulkanBase->device);
+
+		renderEngine->vulkanBase->DestroyDepthResource();
+		renderEngine->vulkanBase->DestroyFramebuffers();
+		DestroyUIFramebuffers();
+		renderEngine->vulkanBase->DestroyImageViews();
+		renderEngine->vulkanBase->DestroySwapChain();
+
+		renderEngine->vulkanBase->CreateSwapChain();
+		renderEngine->vulkanBase->CreateImageViews();
+		renderEngine->vulkanBase->CreateDepthResource();
+		renderEngine->vulkanBase->CreateFramebuffers();
+		CreateUIFramebuffers();
+	}
+
 	void Editor::DrawFrame()
 	{
-		vkWaitForFences(renderEngine->vulkanSetup->device, 1, &(renderEngine->vulkanSyncObject->inFlightFences[renderEngine->currentFrame]), VK_TRUE, UINT64_MAX);
+		vkWaitForFences(renderEngine->vulkanBase->device, 1, &(renderEngine->vulkanBase->inFlightFences[renderEngine->currentFrame]), VK_TRUE, UINT64_MAX);
 
 		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(renderEngine->vulkanSetup->device, renderEngine->vulkanSetup->swapChain,
-			UINT64_MAX, renderEngine->vulkanSyncObject->imageAvailableSemaphores[renderEngine->currentFrame], VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(renderEngine->vulkanBase->device, renderEngine->vulkanBase->swapChain,
+			UINT64_MAX, renderEngine->vulkanBase->imageAvailableSemaphores[renderEngine->currentFrame], VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-			renderEngine->WindowSurfaceChange();
+
+			WindowSurfaceChange();
 			return;
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -286,18 +318,18 @@ namespace VlkEngine {
 
 		renderEngine->UpdateUniformBuffer(renderEngine->currentFrame);
 
-		vkResetFences(renderEngine->vulkanSetup->device, 1, &(renderEngine->vulkanSyncObject->inFlightFences[renderEngine->currentFrame]));
+		vkResetFences(renderEngine->vulkanBase->device, 1, &(renderEngine->vulkanBase->inFlightFences[renderEngine->currentFrame]));
 
-		vkResetCommandBuffer(renderEngine->renderBuffer->commandBuffers[renderEngine->currentFrame], 0);
+		vkResetCommandBuffer(renderEngine->vulkanBase->commandBuffers[renderEngine->currentFrame], 0);
 		renderEngine->RecordCommandBuffer(imageIndex);
 		vkResetCommandBuffer(uiCommandBuffers[renderEngine->currentFrame], 0);
 		RecordUICommandBuffer(imageIndex);
 
-		std::array<VkCommandBuffer, 2> cmdbuffers{renderEngine->renderBuffer->commandBuffers[renderEngine->currentFrame]
+		std::array<VkCommandBuffer, 2> cmdbuffers{renderEngine->vulkanBase->commandBuffers[renderEngine->currentFrame]
 			,uiCommandBuffers[renderEngine->currentFrame] };
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		VkSemaphore waitSemaphores[] = { renderEngine->vulkanSyncObject->imageAvailableSemaphores[renderEngine->currentFrame] };
+		VkSemaphore waitSemaphores[] = { renderEngine->vulkanBase->imageAvailableSemaphores[renderEngine->currentFrame] };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
@@ -305,10 +337,10 @@ namespace VlkEngine {
 		submitInfo.commandBufferCount = static_cast<uint32_t>(cmdbuffers.size());
 		submitInfo.pCommandBuffers = cmdbuffers.data();
 
-		VkSemaphore signalSemaphores[] = { renderEngine->vulkanSyncObject->renderFinishedSemaphores[renderEngine->currentFrame] };
+		VkSemaphore signalSemaphores[] = { renderEngine->vulkanBase->renderFinishedSemaphores[renderEngine->currentFrame] };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
-		if (vkQueueSubmit(renderEngine->vulkanSetup->graphicsQueue, 1, &submitInfo, renderEngine->vulkanSyncObject->inFlightFences[renderEngine->currentFrame]) != VK_SUCCESS) {
+		if (vkQueueSubmit(renderEngine->vulkanBase->graphicsQueue, 1, &submitInfo, renderEngine->vulkanBase->inFlightFences[renderEngine->currentFrame]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 
@@ -316,16 +348,16 @@ namespace VlkEngine {
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = { renderEngine->vulkanSetup->swapChain };
+		VkSwapchainKHR swapChains[] = { renderEngine->vulkanBase->swapChain };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr; // Optional
 
-		result = vkQueuePresentKHR(renderEngine->vulkanSetup->presentQueue, &presentInfo);
+		result = vkQueuePresentKHR(renderEngine->vulkanBase->presentQueue, &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || renderEngine->framebufferResized) {
 			renderEngine->framebufferResized = false;
-			renderEngine->WindowSurfaceChange();
+			WindowSurfaceChange();
 		}
 		else if (result != VK_SUCCESS) {
 			throw std::runtime_error("failed to present swap chain image!");

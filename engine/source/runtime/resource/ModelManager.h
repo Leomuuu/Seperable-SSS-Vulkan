@@ -8,6 +8,7 @@
 namespace VlkEngine {
 	class ModelManager {
 		friend class VulkanEngine;
+		friend class VulkanBase;
 	private:
 		std::string modelPath;
 		std::string texturePath;
