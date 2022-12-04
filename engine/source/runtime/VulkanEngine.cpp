@@ -57,8 +57,8 @@ namespace VlkEngine {
 
         modelManager = new ModelManager();
         modelManager->SetModel(
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/head.OBJ",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/lpshead/lambertian.jpg");
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/OBJ/Head/Head.OBJ",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/JPG/Colour_8k.jpg");
 
         vulkanBase = new VulkanBase(window, this);
         
