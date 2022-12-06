@@ -4,16 +4,21 @@
 
 namespace VlkEngine {
 	
-	void ModelManager::SetModel(std::string modelpath, std::string texturepath)
+	void ModelManager::SetModel(std::string modelpath, std::string colortexturepath)
 	{
 		modelPath = modelpath;
-		texturePath = texturepath;
+		colorTexturePath = colortexturepath;
 		LoadModel();
 	}
 
-	stbi_uc* ModelManager::LoadModelTexture(int* texWidth, int* texHeight, int* texChannels)
+	stbi_uc* ModelManager::LoadModelTexture(ModelTextureType type,int* texWidth, int* texHeight, int* texChannels)
 	{
-		return FileService::LoadAssetImage(texturePath, texWidth, texHeight, texChannels, STBI_rgb_alpha);
+		return FileService::LoadAssetImage(colorTexturePath, texWidth, texHeight, texChannels, STBI_rgb_alpha);
+	}
+
+	void ModelManager::SetPbrTexture(std::string cavitytexturePath, std::string gosstexturePath, std::string speculartexturePath, std::string micronormaltexturePath, std::string normaltexturePath, std::string translucencytexturePath)
+	{
+		return;
 	}
 
 	void ModelManager::LoadModel()

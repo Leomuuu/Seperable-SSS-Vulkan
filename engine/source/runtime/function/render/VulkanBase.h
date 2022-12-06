@@ -1,10 +1,11 @@
 #pragma once
 #include "RenderHeader.h"
 #include "../platform/FileService.h"
-#include "../../VulkanEngine.h"
 
 
 namespace VlkEngine {
+	class VulkanEngine;
+
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
@@ -58,22 +59,18 @@ namespace VlkEngine {
 		VkExtent2D swapChainExtent;
 		// image view
 		std::vector<VkImageView> swapChainImageViews;
-		// render pass
+		// render pass render pipeline
 		VkRenderPass renderPass;
-		// render pipline
 		VkPipelineLayout pipelineLayout;
 		VkPipeline graphicsPipeline;
-		// DescriptorSetLayout
+		// Descriptor
 		VkDescriptorSetLayout descriptorSetLayout;
-		// DescriptorPool
 		VkDescriptorPool descriptorPool;
-		// DescriptorSet
 		std::vector<VkDescriptorSet> descriptorSets;
 		// frame buffer
 		std::vector<VkFramebuffer> swapChainFramebuffers;
-		// command pool
+		// command pool command buffer
 		VkCommandPool commandPool;
-		// command buffer
 		std::vector<VkCommandBuffer> commandBuffers;
 		// vertex buffer
 		VkBuffer vertexBuffer;
@@ -92,9 +89,7 @@ namespace VlkEngine {
 		// TextureImage
 		VkImage textureImage;
 		VkDeviceMemory textureImageMemory;
-		// TextureImageView
 		VkImageView textureImageView;
-		// TextureSampler
 		VkSampler textureSampler;
 		// DepthBuffer
 		VkImage depthImage;
@@ -148,20 +143,19 @@ namespace VlkEngine {
 		void CreateRenderPass();
 		void DestroyRenderPass();
 		// Graphics Pipeline
-		void CreateGraphicsPipeline(std::string& vertShaderPath, std::string& fragShaderPath);
+		virtual void CreateGraphicsPipeline();
 		void DestroyGraphicsPipeline();
 		// Descriptor
-		void CreateDescriptorSetLayout();
-		void CreateDescriptorPool();
-		void CreateDescriptorSets();
+		virtual void CreateDescriptorSetLayout();
+		virtual void CreateDescriptorPool();
+		virtual void CreateDescriptorSets();
 		void DestroyDescriptor();
 		// frame buffer
 		void CreateFramebuffers();
 		void DestroyFramebuffers();
-		// command pool
+		// command pool command buffer
 		void CreateCommandPool();
 		void DestroyCommandPool();
-		// command buffer
 		void CreateCommandBuffer();
 		// vertex buffer
 		void CreateVertexBuffer();
@@ -173,14 +167,8 @@ namespace VlkEngine {
 		void CreateUniformBuffers();
 		void DestroyUniformBuffers();
 		// TextureImage
-		void CreateTextureImage();
-		void DestroyTextureImage();
-		// TextureImageView
-		void CreateTextureImageView();
-		void DestroyTextureImageView();
-		// TextureSampler
-		void CreateTextureSampler();
-		void DestroyTextureSampler();
+		virtual void CreateTexture();
+		virtual void DestroyTexture();
 		// DepthBuffer
 		void CreateDepthResource();
 		void DestroyDepthResource();

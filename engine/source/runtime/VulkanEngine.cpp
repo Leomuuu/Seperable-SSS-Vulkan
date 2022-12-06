@@ -55,12 +55,20 @@ namespace VlkEngine {
 
         inputSystem = new InputSystem(camera);
 
-        modelManager = new ModelManager();
+        modelManager = new PbrModelManager();
         modelManager->SetModel(
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/OBJ/Head/Head.OBJ",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/JPG/Colour_8k.jpg");
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Colour_8k.jpg");
+        modelManager->SetPbrTexture(
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Cavity_8k.jpg",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Gloss_8k.jpg",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Spec_8k.jpg",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/MicroNormal.jpg",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Normal.jpg",
+            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Translucency.jpg"
+        );
 
-        vulkanBase = new VulkanBase(window, this);
+        vulkanBase = new VulkanPBR(window, this);
         
     }
 
@@ -246,6 +254,7 @@ namespace VlkEngine {
         FragUniform fragubo{};
         fragubo.viewPosition = camera->camPosition;
         fragubo.lightPosition =lightPosition;
+        fragubo.lightRadiance = lightRadiance;
 
         memcpy(vulkanBase->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
         memcpy(vulkanBase->fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));

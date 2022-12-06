@@ -1,15 +1,18 @@
 #pragma once
 
 #include "function/render/VulkanBase.h"
+#include "function/render/VulkanPBR.h"
 #include "function/render/Camera.h"
 #include "function/input/InputSystem.h"
 #include "resource/ModelManager.h"
+#include "resource/PbrModelManager.h"
 
 
 namespace VlkEngine {
     class VulkanEngine {
         friend class Editor;
         friend class VulkanBase;
+        friend class VulkanPBR;
     public:
         void Run(); 
         
@@ -54,7 +57,8 @@ namespace VlkEngine {
         ModelManager* modelManager;
 
         // light
-        glm::vec3 lightPosition=glm::vec3(2,2,2);
+        glm::vec3 lightPosition=glm::vec3(2);
+        glm::vec3 lightRadiance = glm::vec3(6);
 
     };
 }

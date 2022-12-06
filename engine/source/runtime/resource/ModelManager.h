@@ -1,3 +1,4 @@
+#pragma once
 #include "../function/platform/FileService.h"
 #include <tiny_obj_loader.h>
 #include <unordered_map>
@@ -6,12 +7,22 @@
 #define CALCULATE_VERTEX_NORMAL
 
 namespace VlkEngine {
+	enum ModelTextureType {
+		Color=0,
+		Cavity=1,
+		Goss=2,
+		Specular=3,
+		MicroNormal=4,
+		Normal=5,
+		Translucency=6
+	};
+
 	class ModelManager {
 		friend class VulkanEngine;
 		friend class VulkanBase;
-	private:
+	protected:
 		std::string modelPath;
-		std::string texturePath;
+		std::string colorTexturePath;
 
 	public:
 		std::vector<Vertex> vertices;
@@ -19,10 +30,16 @@ namespace VlkEngine {
 
 
 	public:
-		void SetModel(std::string modelpath, std::string texturepath);
-		stbi_uc* LoadModelTexture(int* texWidth, int* texHeight, int* texChannels);
+		void SetModel(std::string modelpath, std::string colortexturepath);
+		virtual stbi_uc* LoadModelTexture(ModelTextureType type,int* texWidth, int* texHeight, int* texChannels);
+		virtual void SetPbrTexture(std::string cavitytexturePath,
+			std::string gosstexturePath,
+			std::string speculartexturePath,
+			std::string micronormaltexturePath,
+			std::string normaltexturePath,
+			std::string translucencytexturePath);
 
-	private:
+	protected:
 		void LoadModel();
 
 		float CalcTriangleArea(glm::vec3 veca, glm::vec3 vecb, glm::vec3 vecc);

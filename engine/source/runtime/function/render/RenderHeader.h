@@ -94,6 +94,7 @@ namespace VlkEngine {
 	struct FragUniform {
 		glm::vec3 viewPosition;
 		glm::vec3 lightPosition;
+		glm::vec3 lightRadiance;
 	};
 
 }

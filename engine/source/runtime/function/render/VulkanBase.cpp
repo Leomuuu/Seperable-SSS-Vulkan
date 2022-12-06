@@ -1,4 +1,5 @@
 #include "VulkanBase.h"
+#include "../../VulkanEngine.h"
 
 namespace VlkEngine {
 
@@ -518,10 +519,10 @@ namespace VlkEngine {
 		vkDestroyRenderPass(device, renderPass, nullptr);
 	}
 
-	void VulkanBase::CreateGraphicsPipeline(std::string& vertShaderPath, std::string& fragShaderPath)
+	void VulkanBase::CreateGraphicsPipeline()
 	{
-		auto vertShaderCode = FileService::ReadFile(vertShaderPath);
-		auto fragShaderCode = FileService::ReadFile(fragShaderPath);
+		auto vertShaderCode = FileService::ReadFile("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.vert.spv");
+		auto fragShaderCode = FileService::ReadFile("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.frag.spv");
 
 		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
 		VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -793,6 +794,7 @@ namespace VlkEngine {
 				descriptorWrites.data(), 0, nullptr);
 		}
 	}
+
 	void VulkanBase::DestroyDescriptor()
 	{
 		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
@@ -950,10 +952,11 @@ namespace VlkEngine {
 		}
 	}
 
-	void VulkanBase::CreateTextureImage()
+	void VulkanBase::CreateTexture()
 	{
+		// TextureImage
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = engine->modelManager->LoadModelTexture(&texWidth, &texHeight, &texChannels);
+		stbi_uc* pixels = engine->modelManager->LoadModelTexture(ModelTextureType::Color, &texWidth, &texHeight, &texChannels);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {
@@ -988,26 +991,11 @@ namespace VlkEngine {
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
-	}
 
-	void VulkanBase::DestroyTextureImage()
-	{
-		vkDestroyImage(device, textureImage, nullptr);
-		vkFreeMemory(device, textureImageMemory, nullptr);
-	}
-
-	void VulkanBase::CreateTextureImageView()
-	{
+		// TextureImageView
 		textureImageView = CreateImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-	}
 
-	void VulkanBase::DestroyTextureImageView()
-	{
-		vkDestroyImageView(device, textureImageView, nullptr);
-	}
-
-	void VulkanBase::CreateTextureSampler()
-	{
+		// TextureSampler
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -1039,9 +1027,13 @@ namespace VlkEngine {
 		}
 	}
 
-	void VulkanBase::DestroyTextureSampler()
+
+	void VulkanBase::DestroyTexture()
 	{
 		vkDestroySampler(device, textureSampler, nullptr);
+		vkDestroyImageView(device, textureImageView, nullptr);
+		vkDestroyImage(device, textureImage, nullptr);
+		vkFreeMemory(device, textureImageMemory, nullptr);
 	}
 
 	void VulkanBase::CreateDepthResource()
@@ -1363,35 +1355,31 @@ namespace VlkEngine {
 		CreateImageViews();
 		CreateRenderPass();
 		CreateDescriptorSetLayout();
-		CreateGraphicsPipeline(
-			std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.vert.spv"),
-			std::string("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/simple_shader.frag.spv"));
+		CreateGraphicsPipeline();
 		CreateDepthResource();
 		CreateFramebuffers();
 		CreateCommandPool();
 		CreateCommandBuffer();
+		CreateSyncObjects();
 		CreateVertexBuffer();
 		CreateIndexBuffer();
 		CreateUniformBuffers();
-		CreateTextureImage();
-		CreateTextureImageView();
-		CreateTextureSampler();
+		CreateTexture();
 		CreateDescriptorPool();
 		CreateDescriptorSets();
-		CreateSyncObjects();
+		
 	}
 
 	void VulkanBase::ShutDownVulkan()
 	{
-		DestroySyncObjects();
+		
 		DestroyDepthResource();
 		DestroyDescriptor();
-		DestroyTextureSampler();
-		DestroyTextureImageView();
-		DestroyTextureImage();
+		DestroyTexture();
 		DestroyUniformBuffers();
 		DestroyIndexBuffer();
 		DestroyVertexBuffer();
+		DestroySyncObjects();
 		DestroyCommandPool();
 		DestroyFramebuffers();
 		DestroyGraphicsPipeline();
