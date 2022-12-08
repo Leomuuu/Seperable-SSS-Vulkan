@@ -86,9 +86,12 @@ namespace VlkEngine {
 
 
 	struct MVPMatrix {
-		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
+	};
+
+	struct DynamicUBO {
+		glm::mat4* model=nullptr;
 	};
 
 	struct FragUniform {

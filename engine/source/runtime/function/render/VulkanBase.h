@@ -59,8 +59,9 @@ namespace VlkEngine {
 		VkExtent2D swapChainExtent;
 		// image view
 		std::vector<VkImageView> swapChainImageViews;
-		// render pass render pipeline
+		// render pass 
 		VkRenderPass renderPass;
+		// render pipeline
 		VkPipelineLayout pipelineLayout;
 		VkPipeline graphicsPipeline;
 		// Descriptor
@@ -81,7 +82,7 @@ namespace VlkEngine {
 		// vertex shader stage uniform buffer
 		std::vector<VkBuffer> uniformBuffers;
 		std::vector<VkDeviceMemory> uniformBuffersMemory;
-		std::vector<void*> uniformBuffersMapped;
+		// std::vector<void*> uniformBuffersMapped;
 		// fragment shader stage uniform buffer
 		std::vector<VkBuffer> fraguniformBuffers;
 		std::vector<VkDeviceMemory> fraguniformBuffersMemory;
@@ -166,6 +167,11 @@ namespace VlkEngine {
 		// uniform buffer
 		void CreateUniformBuffers();
 		void DestroyUniformBuffers();
+		// dynamic uniform buffer
+		std::vector<void*> dynamicUniformData;
+		size_t dynamicAlignment;
+		size_t normalUBOAlignment;
+		DynamicUBO uboDynamic;
 		// TextureImage
 		virtual void CreateTexture();
 		virtual void DestroyTexture();

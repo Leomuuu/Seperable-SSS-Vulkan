@@ -67,6 +67,14 @@ namespace VlkEngine {
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Normal.jpg",
             "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Translucency.jpg"
         );
+        modelManager->instanceModelMatrix.push_back(glm::mat4(1.0f));
+        modelManager->instanceModelMatrix.push_back(glm::translate(
+            glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), 
+                glm::vec3(0.0, 1.0, 0.0)), glm::vec3(0.0f, 0.0f, -0.4f)));
+        modelManager->instanceModelMatrix.push_back(glm::translate(
+            glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
+                glm::vec3(0.0, 1.0, 0.0)), glm::vec3(0.0f, 0.0f, -0.8f)));
+        
 
         vulkanBase = new VulkanPBR(window, this);
         
@@ -82,7 +90,7 @@ namespace VlkEngine {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
             DrawFrame();
-            inputSystem->ProcessInput(window);
+            inputSystem->ProcessInput(window,1000);
         }
         vkDeviceWaitIdle(vulkanBase->device);
     }
@@ -111,11 +119,10 @@ namespace VlkEngine {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        UpdateUniformBuffer(currentFrame);
-        
         vkResetFences(vulkanBase->device, 1, &(vulkanBase->inFlightFences[currentFrame]));
         
         vkResetCommandBuffer(vulkanBase->commandBuffers[currentFrame], 0);
+        
         RecordCommandBuffer(imageIndex);
 
         VkSubmitInfo submitInfo{};
@@ -158,6 +165,8 @@ namespace VlkEngine {
 
 	void VulkanEngine::RecordCommandBuffer(uint32_t imageIndex)
 	{
+        UpdateUniformBuffer(currentFrame);
+
         VkCommandBuffer commandBuffer = vulkanBase->commandBuffers[currentFrame];
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -205,10 +214,17 @@ namespace VlkEngine {
 
         vkCmdBindIndexBuffer(commandBuffer, vulkanBase->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanBase->pipelineLayout,
+        for (uint32_t j = 0; j < modelManager->instanceModelMatrix.size(); ++j)
+        {
+            uint32_t dynamicOffset = j * static_cast<uint32_t>(vulkanBase->dynamicAlignment);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanBase->pipelineLayout, 0, 1, &vulkanBase->descriptorSets[currentFrame], 1, &dynamicOffset);
+            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(modelManager->indices.size()), modelManager->instanceModelMatrix.size(), 0, 0, 0);
+        }
+
+        /*vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanBase->pipelineLayout,
             0, 1, &((vulkanBase->descriptorSets)[currentFrame]), 0, nullptr);
 
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(modelManager->indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(modelManager->indices.size()), 1, 0, 0, 0);*/
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -241,12 +257,8 @@ namespace VlkEngine {
 
 	void VulkanEngine::UpdateUniformBuffer(uint32_t currentImage)
 	{
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
+      
         MVPMatrix ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = camera->GetViewMatrix();
         ubo.proj = glm::perspective(camera->Fov, vulkanBase->swapChainExtent.width / (float)(vulkanBase->swapChainExtent.height), camera->zNear, camera->zFar);
         ubo.proj[1][1] *= -1;
@@ -256,9 +268,24 @@ namespace VlkEngine {
         fragubo.lightPosition =lightPosition;
         fragubo.lightRadiance = lightRadiance;
 
-        memcpy(vulkanBase->uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+        memcpy(vulkanBase->dynamicUniformData[currentImage], &ubo, sizeof(ubo));
         memcpy(vulkanBase->fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));
 
+        uint32_t index = 0;
+        for (int i=0;i<modelManager->instanceModelMatrix.size();i++)
+        {
+            glm::mat4* modelMat = (glm::mat4*)(((uint64_t)vulkanBase->uboDynamic.model + (index * vulkanBase->dynamicAlignment)));
+            *modelMat =modelManager->instanceModelMatrix[i];
+            ++index;
+        }
 
+        void* data = reinterpret_cast<size_t*>(vulkanBase->dynamicUniformData[currentImage]) + vulkanBase->normalUBOAlignment / sizeof(size_t);
+        memcpy(data, vulkanBase->uboDynamic.model, modelManager->instanceModelMatrix.size() * vulkanBase->dynamicAlignment);
+
+        VkMappedMemoryRange memoryRange = {};
+        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        memoryRange.memory = vulkanBase->uniformBuffersMemory[currentImage];
+        memoryRange.size = VK_WHOLE_SIZE;
+        vkFlushMappedMemoryRanges(vulkanBase->device, 1, &memoryRange);
     }
 }

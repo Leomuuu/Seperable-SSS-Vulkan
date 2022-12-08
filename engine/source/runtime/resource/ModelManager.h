@@ -27,6 +27,7 @@ namespace VlkEngine {
 	public:
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
+		std::vector<glm::mat4> instanceModelMatrix;
 
 
 	public:

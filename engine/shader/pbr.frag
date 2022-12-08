@@ -6,9 +6,9 @@ layout(location = 2) in vec3 fragNormal;
 layout(location = 3) in vec2 fragTexCoord;
 
 // color cavity gloss specular micronormal normal translucency 
-layout(binding = 1) uniform sampler2D texSampler[7];
+layout(binding = 2) uniform sampler2D texSampler[7];
 
-layout(binding = 2) uniform FragUniform {
+layout(binding = 3) uniform FragUniform {
     vec3 viewPosition;
     vec3 lightPosition;
     vec3 lightradiance;
@@ -53,6 +53,7 @@ vec3 F_FresnelSchlick(float dotHV, vec3 F0)
 	return F0 + (1.0 - F0) * power;
 }
 
+// based on http://www.thetenthplanet.de/archives/1180
 mat3 calculateTBN( vec3 N, vec3 p, vec2 uv )
 {
     // get edge vectors of the pixel triangle

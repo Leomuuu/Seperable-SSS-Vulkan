@@ -32,7 +32,7 @@ namespace VlkEngine {
 		mcamera->ProcessRotation(-deltaX, -deltaY);
 	}
 
-	void InputSystem::ProcessInput(GLFWwindow* window)
+	void InputSystem::ProcessInput(GLFWwindow* window, float deltaTime)
 	{
 		/*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -59,6 +59,6 @@ namespace VlkEngine {
 		if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
 			movez -= 0.01f;
 		}
-		mcamera->ProcessMovement(movex, movey, movez);
+		mcamera->ProcessMovement(movex * deltaTime *2000, movey * deltaTime * 2000, movez * deltaTime * 2000);
 	}
 }

@@ -7,7 +7,7 @@ namespace VlkEngine {
 		InputSystem(Camera* camera);
 
 		void MouseMovement(GLFWwindow* window, double xpos, double ypos);
-		void ProcessInput(GLFWwindow* window);
+		void ProcessInput(GLFWwindow* window,float deltaTime);
 
 	private:
 		Camera* mcamera;

@@ -13,6 +13,19 @@ namespace VlkEngine {
 
 		return VK_FALSE;
 	}
+
+	void* alignedAlloc(size_t size, size_t alignment)
+	{
+		void* data = nullptr;
+#if defined(_MSC_VER) || defined(__MINGW32__)
+		data = _aligned_malloc(size, alignment);
+#else
+		int res = posix_memalign(&data, alignment, size);
+		if (res != 0)
+			data = nullptr;
+#endif
+		return data;
+	}
 	
 	void VulkanBase::CreateVulkanInstance()
 	{
@@ -639,7 +652,7 @@ namespace VlkEngine {
 		pipelineLayoutInfo.setLayoutCount = 1; // Optional
 		pipelineLayoutInfo.pSetLayouts = &(descriptorSetLayout); // Optional
 		pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-		pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+		pipelineLayoutInfo.pPushConstantRanges = nullptr;// Optional
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
@@ -686,22 +699,29 @@ namespace VlkEngine {
 		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
+		VkDescriptorSetLayoutBinding uboDynamicLayoutBinding = {};
+		uboDynamicLayoutBinding.binding = 1;
+		uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		uboDynamicLayoutBinding.descriptorCount = 1;
+		uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		uboDynamicLayoutBinding.pImmutableSamplers = nullptr;
+
 		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-		samplerLayoutBinding.binding = 1;
+		samplerLayoutBinding.binding = 2;
 		samplerLayoutBinding.descriptorCount = 1;
 		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		VkDescriptorSetLayoutBinding fraguboLayoutBinding{};
-		fraguboLayoutBinding.binding = 2;
+		fraguboLayoutBinding.binding = 3;
 		fraguboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		fraguboLayoutBinding.descriptorCount = 1;
 		fraguboLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		fraguboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-		std::array<VkDescriptorSetLayoutBinding, 3> bindings =
-		{ uboLayoutBinding, samplerLayoutBinding,fraguboLayoutBinding };
+		std::array<VkDescriptorSetLayoutBinding, 4> bindings =
+		{ uboLayoutBinding, uboDynamicLayoutBinding,samplerLayoutBinding,fraguboLayoutBinding };
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -715,13 +735,15 @@ namespace VlkEngine {
 
 	void VulkanBase::CreateDescriptorPool()
 	{
-		std::array<VkDescriptorPoolSize, 3> poolSizes{};
+		std::array<VkDescriptorPoolSize, 4> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[3].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -752,7 +774,12 @@ namespace VlkEngine {
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = uniformBuffers[i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(MVPMatrix);
+			bufferInfo.range = normalUBOAlignment;
+
+			VkDescriptorBufferInfo dynamicBufferInfo = {};
+			dynamicBufferInfo.buffer = uniformBuffers[i];
+			dynamicBufferInfo.offset = normalUBOAlignment;
+			dynamicBufferInfo.range = dynamicAlignment;
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -764,7 +791,7 @@ namespace VlkEngine {
 			fragbufferInfo.offset = 0;
 			fragbufferInfo.range = sizeof(FragUniform);
 
-			std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+			std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[0].dstSet = descriptorSets[i];
@@ -778,17 +805,26 @@ namespace VlkEngine {
 			descriptorWrites[1].dstSet = descriptorSets[i];
 			descriptorWrites[1].dstBinding = 1;
 			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
+			descriptorWrites[1].pBufferInfo = &dynamicBufferInfo;
+			descriptorWrites[1].pTexelBufferView = nullptr;
 
 			descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[2].dstSet = descriptorSets[i];
 			descriptorWrites[2].dstBinding = 2;
 			descriptorWrites[2].dstArrayElement = 0;
-			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrites[2].descriptorCount = 1;
-			descriptorWrites[2].pBufferInfo = &fragbufferInfo;
+			descriptorWrites[2].pImageInfo = &imageInfo;
+
+			descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[3].dstSet = descriptorSets[i];
+			descriptorWrites[3].dstBinding = 3;
+			descriptorWrites[3].dstArrayElement = 0;
+			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[3].descriptorCount = 1;
+			descriptorWrites[3].pBufferInfo = &fragbufferInfo;
 
 			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()),
 				descriptorWrites.data(), 0, nullptr);
@@ -922,7 +958,7 @@ namespace VlkEngine {
 
 	void VulkanBase::CreateUniformBuffers()
 	{
-		VkDeviceSize bufferSize = sizeof(MVPMatrix);
+		/*VkDeviceSize bufferSize = sizeof(MVPMatrix);
 		uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 		uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -936,6 +972,45 @@ namespace VlkEngine {
 			CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 			vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
 
+			CreateBuffer(fragbufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, fraguniformBuffers[i], fraguniformBuffersMemory[i]);
+			vkMapMemory(device, fraguniformBuffersMemory[i], 0, fragbufferSize, 0, &fraguniformBuffersMapped[i]);
+		}*/
+
+		//dynamic
+		VkPhysicalDeviceProperties properties;
+		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+		size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
+		dynamicAlignment = sizeof(glm::mat4);
+		if (minUboAlignment > 0) {
+			dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+		}
+		VkDeviceSize bufferSize = engine->modelManager->instanceModelMatrix.size() * dynamicAlignment;
+		uboDynamic.model = (glm::mat4*)alignedAlloc(bufferSize, dynamicAlignment);
+
+		dynamicUniformData.resize(MAX_FRAMES_IN_FLIGHT);
+
+		//normal
+		normalUBOAlignment = sizeof(MVPMatrix);
+		if (minUboAlignment > 0) {
+			normalUBOAlignment = (normalUBOAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+		}
+		bufferSize += normalUBOAlignment;
+
+		uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+		// uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+		VkDeviceSize fragbufferSize = sizeof(FragUniform);
+		fraguniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		fraguniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+		fraguniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+			vkMapMemory(device, uniformBuffersMemory[i], 0, engine->modelManager->instanceModelMatrix.size() * dynamicAlignment, 0, &dynamicUniformData[i]);
+		
 			CreateBuffer(fragbufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, fraguniformBuffers[i], fraguniformBuffersMemory[i]);
 			vkMapMemory(device, fraguniformBuffersMemory[i], 0, fragbufferSize, 0, &fraguniformBuffersMapped[i]);
 		}

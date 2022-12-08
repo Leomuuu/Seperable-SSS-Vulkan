@@ -35,9 +35,9 @@ namespace VlkEngine {
 			glfwPollEvents();
 			DrawUI();
 			DrawFrame();
-			renderEngine->inputSystem->ProcessInput(renderEngine->window);
 			finishtime = clock();
 			deltatime = (double)(finishtime - starttime) / CLOCKS_PER_SEC;
+			renderEngine->inputSystem->ProcessInput(renderEngine->window, deltatime);
 			fps = Calfps(deltatime);
 			starttime = clock();
 		}
@@ -254,9 +254,9 @@ namespace VlkEngine {
 		static float lightposz = lightpos.z;
 		ImGui::Begin("Renderer Information");
 		ImGui::TextColored(ImVec4(1, 1, 0, 1), "Light Position");
-		ImGui::SliderFloat("lightposx", &lightposx, -10.0f, 10.0f);
-		ImGui::SliderFloat("lightposy", &lightposy, -10.0f, 10.0f);
-		ImGui::SliderFloat("lightposz", &lightposz, -10.0f, 10.0f);
+		ImGui::SliderFloat("lightposx", &lightposx, -20.0f, 20.0f);
+		ImGui::SliderFloat("lightposy", &lightposy, -20.0f, 20.0f);
+		ImGui::SliderFloat("lightposz", &lightposz, -20.0f, 20.0f);
 		renderEngine->lightPosition=glm::vec3(lightposx, lightposy, lightposz);
 
 		ImGui::TextColored(ImVec4(1, 1, 0, 1),"Camera Position");
@@ -345,8 +345,6 @@ namespace VlkEngine {
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
-
-		renderEngine->UpdateUniformBuffer(renderEngine->currentFrame);
 
 		vkResetFences(renderEngine->vulkanBase->device, 1, &(renderEngine->vulkanBase->inFlightFences[renderEngine->currentFrame]));
 
