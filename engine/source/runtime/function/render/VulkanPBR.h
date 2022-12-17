@@ -28,5 +28,7 @@ namespace VlkEngine {
 	public:
 		VulkanPBR(GLFWwindow* glfwwindow, VulkanEngine* vlkengine);
 
+		virtual void StartVulkan();
+		virtual void ShutDownVulkan();
 	};
 }

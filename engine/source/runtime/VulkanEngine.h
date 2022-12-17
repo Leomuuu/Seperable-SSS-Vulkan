@@ -2,6 +2,7 @@
 
 #include "function/render/VulkanBase.h"
 #include "function/render/VulkanPBR.h"
+#include "function/render/VulkanShadowMap.h"
 #include "function/render/Camera.h"
 #include "function/input/InputSystem.h"
 #include "resource/ModelManager.h"
@@ -13,6 +14,7 @@ namespace VlkEngine {
         friend class Editor;
         friend class VulkanBase;
         friend class VulkanPBR;
+        friend class VulkanShadowMap;
     public:
         void Run(); 
         
@@ -32,9 +34,7 @@ namespace VlkEngine {
 
         void DrawFrame();
 
-        void RecordCommandBuffer(uint32_t imageIndex);
         void WindowSurfaceChange();
-        void UpdateUniformBuffer(uint32_t currentImage);
         
         // window
         GLFWwindow* window;
@@ -48,6 +48,7 @@ namespace VlkEngine {
         bool framebufferResized = false;
 
         // camera
+        glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
         Camera* camera;
 
         // input
@@ -59,6 +60,7 @@ namespace VlkEngine {
         // light
         glm::vec3 lightPosition=glm::vec3(2);
         glm::vec3 lightRadiance = glm::vec3(6);
+        float lightFov = 45.0f;
 
     };
 }

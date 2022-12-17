@@ -84,6 +84,10 @@ namespace VlkEngine {
 		}
 	};
 
+	struct ShadowMVP {
+		glm::mat4 worldprojview;
+		glm::mat4 lightprojview;
+	};
 
 	struct MVPMatrix {
 		glm::mat4 view;

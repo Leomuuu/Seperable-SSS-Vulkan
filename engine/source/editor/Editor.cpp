@@ -348,8 +348,9 @@ namespace VlkEngine {
 
 		vkResetFences(renderEngine->vulkanBase->device, 1, &(renderEngine->vulkanBase->inFlightFences[renderEngine->currentFrame]));
 
+		renderEngine->vulkanBase->UpdateUniformBuffer(renderEngine->currentFrame);
 		vkResetCommandBuffer(renderEngine->vulkanBase->commandBuffers[renderEngine->currentFrame], 0);
-		renderEngine->RecordCommandBuffer(imageIndex);
+		renderEngine->vulkanBase->RecordCommandBuffer(imageIndex, renderEngine->currentFrame);
 		vkResetCommandBuffer(uiCommandBuffers[renderEngine->currentFrame], 0);
 		RecordUICommandBuffer(imageIndex);
 

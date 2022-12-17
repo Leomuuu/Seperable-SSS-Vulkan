@@ -20,6 +20,7 @@ namespace VlkEngine {
 	class ModelManager {
 		friend class VulkanEngine;
 		friend class VulkanBase;
+		friend class VulkanShadowMap;
 	protected:
 		std::string modelPath;
 		std::string colorTexturePath;

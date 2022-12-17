@@ -14,18 +14,7 @@ namespace VlkEngine {
 		return VK_FALSE;
 	}
 
-	void* alignedAlloc(size_t size, size_t alignment)
-	{
-		void* data = nullptr;
-#if defined(_MSC_VER) || defined(__MINGW32__)
-		data = _aligned_malloc(size, alignment);
-#else
-		int res = posix_memalign(&data, alignment, size);
-		if (res != 0)
-			data = nullptr;
-#endif
-		return data;
-	}
+
 	
 	void VulkanBase::CreateVulkanInstance()
 	{
@@ -534,8 +523,8 @@ namespace VlkEngine {
 
 	void VulkanBase::CreateGraphicsPipeline()
 	{
-		auto vertShaderCode = FileService::ReadFile("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.vert.spv");
-		auto fragShaderCode = FileService::ReadFile("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.frag.spv");
+		auto vertShaderCode = FileService::ReadFile(lightVertPath);
+		auto fragShaderCode = FileService::ReadFile(lightFragPath);
 
 		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
 		VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -1416,10 +1405,11 @@ namespace VlkEngine {
 	VulkanBase::VulkanBase(GLFWwindow* glfwwindow, VulkanEngine* vlkengine) :
 		window(glfwwindow),engine(vlkengine)
 	{
-
+		lightVertPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.vert.spv";
+		lightFragPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.frag.spv";
 	}
 
-	void VulkanBase::StartVulkan()
+	void VulkanBase::CreateVulkanResources()
 	{
 		CreateVulkanInstance();
 		SetupDebugMessenger();
@@ -1428,6 +1418,23 @@ namespace VlkEngine {
 		CreateLogicalDevice();
 		CreateSwapChain();
 		CreateImageViews();
+	}
+
+	void VulkanBase::DestroyVulkanResources()
+	{
+		DestroyImageViews();
+		DestroySwapChain();
+		DestroyLogicalDevice();
+		DestroySurface();
+		if (enableValidationLayers) {
+			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+		}
+		DestroyVulkanInstance();
+	}
+
+	void VulkanBase::StartVulkan()
+	{
+
 		CreateRenderPass();
 		CreateDescriptorSetLayout();
 		CreateGraphicsPipeline();
@@ -1459,13 +1466,98 @@ namespace VlkEngine {
 		DestroyFramebuffers();
 		DestroyGraphicsPipeline();
 		DestroyRenderPass();
-		DestroyImageViews();
-		DestroySwapChain();
-		DestroyLogicalDevice();
-		DestroySurface();
-		if (enableValidationLayers) {
-			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+
+	}
+
+	void VulkanBase::RecordCommandBuffer(uint32_t imageIndex, uint32_t currentFrame)
+	{
+		VkCommandBuffer commandBuffer = commandBuffers[currentFrame];
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = 0; // Optional
+		beginInfo.pInheritanceInfo = nullptr; // Optional
+
+		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+			throw std::runtime_error("failed to begin recording command buffer!");
 		}
-		DestroyVulkanInstance();
+
+		std::array<VkClearValue, 2> clearValues{};
+		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+		clearValues[1].depthStencil = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = renderPass;
+		renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = swapChainExtent;
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,graphicsPipeline);
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(swapChainExtent.width);
+		viewport.height = static_cast<float>(swapChainExtent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = swapChainExtent;
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		VkBuffer vertexBuffers[] = { vertexBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+		for (uint32_t j = 0; j < engine->modelManager->instanceModelMatrix.size(); ++j)
+		{
+			uint32_t dynamicOffset = j * static_cast<uint32_t>(dynamicAlignment);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout, 0, 1, &descriptorSets[currentFrame], 1, &dynamicOffset);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(engine->modelManager->indices.size()), engine->modelManager->instanceModelMatrix.size(), 0, 0, 0);
+		}
+
+
+		vkCmdEndRenderPass(commandBuffer);
+
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+			throw std::runtime_error("failed to record command buffer!");
+		}
+	}
+
+	void VulkanBase::UpdateUniformBuffer(uint32_t currentImage)
+	{
+		MVPMatrix ubo{};
+		ubo.view = engine->camera->GetViewMatrix();
+		ubo.proj = glm::perspective(engine->camera->Fov, swapChainExtent.width / (float)(swapChainExtent.height), engine->camera->zNear, engine->camera->zFar);
+		ubo.proj[1][1] *= -1;
+
+		FragUniform fragubo{};
+		fragubo.viewPosition = engine->camera->camPosition;
+		fragubo.lightPosition = engine->lightPosition;
+		fragubo.lightRadiance = engine->lightRadiance;
+
+		memcpy(dynamicUniformData[currentImage], &ubo, sizeof(ubo));
+		memcpy(fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));
+
+		uint32_t index = 0;
+		for (int i = 0; i < engine->modelManager->instanceModelMatrix.size(); i++)
+		{
+			glm::mat4* modelMat = (glm::mat4*)(((uint64_t)uboDynamic.model + (index * dynamicAlignment)));
+			*modelMat = engine->modelManager->instanceModelMatrix[i];
+			++index;
+		}
+
+		void* data = reinterpret_cast<size_t*>(dynamicUniformData[currentImage]) + normalUBOAlignment / sizeof(size_t);
+		memcpy(data, uboDynamic.model, engine->modelManager->instanceModelMatrix.size() * dynamicAlignment);
+
 	}
 }

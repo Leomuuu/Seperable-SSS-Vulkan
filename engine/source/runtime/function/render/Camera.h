@@ -16,7 +16,7 @@ namespace VlkEngine {
 		void SetPosition(glm::vec3 pos);
 		glm::vec3 GetPosition();
 
-	private:
+	public:
 		glm::vec3 camPosition;
 		glm::vec3 camForward;
 		glm::vec3 camRight;

@@ -4,6 +4,21 @@
 
 
 namespace VlkEngine {
+
+	static void* alignedAlloc(size_t size, size_t alignment)
+	{
+		void* data = nullptr;
+	#if defined(_MSC_VER) || defined(__MINGW32__)
+		data = _aligned_malloc(size, alignment);
+	#else
+		int res = posix_memalign(&data, alignment, size);
+		if (res != 0)
+			data = nullptr;
+	#endif
+		return data;
+	}
+
+
 	class VulkanEngine;
 
 	struct QueueFamilyIndices {
@@ -83,10 +98,16 @@ namespace VlkEngine {
 		std::vector<VkBuffer> uniformBuffers;
 		std::vector<VkDeviceMemory> uniformBuffersMemory;
 		// std::vector<void*> uniformBuffersMapped;
+		// dynamic uniform buffer
+		std::vector<void*> dynamicUniformData;
+		size_t dynamicAlignment;
+		size_t normalUBOAlignment;
+		DynamicUBO uboDynamic;
 		// fragment shader stage uniform buffer
 		std::vector<VkBuffer> fraguniformBuffers;
 		std::vector<VkDeviceMemory> fraguniformBuffersMemory;
 		std::vector<void*> fraguniformBuffersMapped;
+
 		// TextureImage
 		VkImage textureImage;
 		VkDeviceMemory textureImageMemory;
@@ -141,49 +162,41 @@ namespace VlkEngine {
 		void DestroyImageViews();
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 		// Render Pass
-		void CreateRenderPass();
-		void DestroyRenderPass();
+		virtual void CreateRenderPass();
+		virtual void DestroyRenderPass();
 		// Graphics Pipeline
 		virtual void CreateGraphicsPipeline();
-		void DestroyGraphicsPipeline();
+		virtual void DestroyGraphicsPipeline();
 		// Descriptor
 		virtual void CreateDescriptorSetLayout();
 		virtual void CreateDescriptorPool();
 		virtual void CreateDescriptorSets();
-		void DestroyDescriptor();
+		virtual void DestroyDescriptor();
 		// frame buffer
-		void CreateFramebuffers();
-		void DestroyFramebuffers();
+		virtual void CreateFramebuffers();
+		virtual void DestroyFramebuffers();
 		// command pool command buffer
-		void CreateCommandPool();
-		void DestroyCommandPool();
-		void CreateCommandBuffer();
+		virtual void CreateCommandPool();
+		virtual void DestroyCommandPool();
+		virtual void CreateCommandBuffer();
 		// vertex buffer
-		void CreateVertexBuffer();
-		void DestroyVertexBuffer();
+		virtual void CreateVertexBuffer();
+		virtual void DestroyVertexBuffer();
 		// index buffer
-		void CreateIndexBuffer();
-		void DestroyIndexBuffer();
+		virtual void CreateIndexBuffer();
+		virtual void DestroyIndexBuffer();
 		// uniform buffer
-		void CreateUniformBuffers();
-		void DestroyUniformBuffers();
-		// dynamic uniform buffer
-		std::vector<void*> dynamicUniformData;
-		size_t dynamicAlignment;
-		size_t normalUBOAlignment;
-		DynamicUBO uboDynamic;
+		virtual void CreateUniformBuffers();
+		virtual void DestroyUniformBuffers();
 		// TextureImage
 		virtual void CreateTexture();
 		virtual void DestroyTexture();
 		// DepthBuffer
-		void CreateDepthResource();
-		void DestroyDepthResource();
+		virtual void CreateDepthResource();
+		virtual void DestroyDepthResource();
 		// SyncObject
-		void CreateSyncObjects();
-		void DestroySyncObjects();
-
-		
-
+		virtual void CreateSyncObjects();
+		virtual void DestroySyncObjects();
 
 	protected:
 		// support format
@@ -215,8 +228,18 @@ namespace VlkEngine {
 	public:
 		VulkanBase(GLFWwindow* glfwwindow,VulkanEngine* vlkengine);
 
-		void StartVulkan();
-		void ShutDownVulkan();
+		void CreateVulkanResources();
+		void DestroyVulkanResources();
+
+		virtual void StartVulkan();
+		virtual void ShutDownVulkan();
+
+		virtual void RecordCommandBuffer(uint32_t imageIndex, uint32_t currentFrame);
+		virtual void UpdateUniformBuffer(uint32_t currentImage);
+
+	protected:
+		std::string lightVertPath;
+		std::string lightFragPath;
 
 	};
 
