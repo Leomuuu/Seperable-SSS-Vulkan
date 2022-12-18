@@ -6,7 +6,6 @@ layout(location = 2) in vec3 fragNormal;
 layout(location = 3) in vec2 fragTexCoord;
 layout(location = 4) in vec4 shadowCoord;
 
-
 // color cavity gloss specular micronormal normal translucency 
 layout(binding = 2) uniform sampler2D texSampler[7];
 
@@ -77,20 +76,48 @@ mat3 calculateTBN( vec3 N, vec3 p, vec2 uv )
     return mat3( T * -invmax, B * invmax, N );
 }
 
-void main() {
-    
-    // shadow
+// shadow
+float GetShadow(vec4 shadowCoordN , vec2 offset){
+
     float shadow=1.0;
-    vec4 shadowCoordN=shadowCoord/shadowCoord.w;
     if ( shadowCoordN.z > -1.0 && shadowCoordN.z < 1.0 ) 
 	{
-		float dist = texture( shadowMapSampler, shadowCoordN.xy).r;
+		float dist = texture( shadowMapSampler, shadowCoordN.xy+offset).r;
 		if ( shadowCoordN.w > 0.0 && dist < shadowCoordN.z ) 
 		{
 			shadow = 0.0;
 		}
 	}
+    return shadow;
+}
+float PCF(vec4 shadowCoordN){
 
+    ivec2 texDim = textureSize(shadowMapSampler, 0);
+	float scale = 1.5;
+	float dx = scale * 1.0 / float(texDim.x);
+	float dy = scale * 1.0 / float(texDim.y);
+
+	float shadowFactor = 0.0;
+	int count = 0;
+	int range = 3;
+	
+	for (int x = -range; x <= range; x++)
+	{
+		for (int y = -range; y <= range; y++)
+		{
+			shadowFactor += GetShadow(shadowCoordN, vec2(dx*x, dy*y));
+			count++;
+		}
+	}
+	return shadowFactor / count;
+}
+
+
+void main() {
+
+    // shadow
+    vec4 shadowCoordN=shadowCoord/shadowCoord.w;
+    float shadow=PCF( shadowCoordN );
 
     // light     
     vec3 albedo=texture(texSampler[0], fragTexCoord).rgb;
