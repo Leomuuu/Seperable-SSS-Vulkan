@@ -60,7 +60,7 @@ namespace VlkEngine {
 		void CreateOffscreenDescriptorSetLayout();
 		void CreateOffscreenDescriptorSets();
 		void CreateOffscreenPipeline();
-
+		void DestroyOffscreenResources();
 		
 
 	public:

@@ -19,7 +19,7 @@ void main() {
     vec3 color = texture(texSampler, fragTexCoord).rgb;
 
     // ambient
-    vec3 ambient = 0.05 * color;
+    vec3 ambient = 0.0 * color;
     // diffuse
     vec3 lightDir = normalize(fragubo.lightPosition - fragPos);
     vec3 normal = normalize(fragNormal);

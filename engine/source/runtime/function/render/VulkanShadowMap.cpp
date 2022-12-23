@@ -234,7 +234,7 @@ namespace VlkEngine {
 	void VulkanShadowMap::CreateOffscreenPipeline()
 	{
 		// vertex shader only
-		auto vertShaderCode = FileService::ReadFile("C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/offscreen.vert.spv");
+		auto vertShaderCode = FileService::ReadFile(SHADERDIR+"offscreen.vert.spv");
 		
 
 		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
@@ -355,7 +355,25 @@ namespace VlkEngine {
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	}
 
-	VulkanShadowMap::VulkanShadowMap(GLFWwindow* glfwwindow, VulkanEngine* vlkengine):
+	void VulkanShadowMap::DestroyOffscreenResources()
+	{
+		vkDestroySampler(device, offscreenShadowPass.depthSampler, nullptr);
+		vkDestroyImageView(device, offscreenShadowPass.imageView, nullptr);
+		vkDestroyImage(device, offscreenShadowPass.image, nullptr);
+		vkFreeMemory(device, offscreenShadowPass.deviceMemory, nullptr);
+		vkDestroyRenderPass(device, offscreenShadowPass.renderPass, nullptr);
+		vkDestroyDescriptorPool(device, offscreenShadowDescriptor.descriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(device, offscreenShadowDescriptor.descriptorSetLayout, nullptr);
+		vkDestroyPipeline(device, offscreenShadowPipeline.Pipeline, nullptr);
+		vkDestroyPipelineLayout(device, offscreenShadowPipeline.pipelineLayout, nullptr);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			vkDestroyBuffer(device, offscreenShadowUniformBuffer.uniformBuffers[i], nullptr);
+			vkFreeMemory(device, offscreenShadowUniformBuffer.uniformBuffersMemory[i], nullptr);
+		}
+		vkDestroyFramebuffer(device, offscreenShadowPass.frameBuffer, nullptr);
+	}
+
+	VulkanShadowMap::VulkanShadowMap(GLFWwindow* glfwwindow, VulkanEngine* vlkengine) :
 		VulkanPBR(glfwwindow,vlkengine)
 	{
 		lightVertPath = SHADERDIR+"pbr_shadowmap.vert.spv";
@@ -433,6 +451,8 @@ namespace VlkEngine {
 
 	void VulkanShadowMap::ShutDownVulkan()
 	{
+		DestroyOffscreenResources();
+
 		VulkanPBR::ShutDownVulkan();
 	}
 
@@ -449,7 +469,7 @@ namespace VlkEngine {
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-		// offscreen pass
+		// shadow pass
 		{
 			std::array<VkClearValue, 1> clearValues{};
 			clearValues[0].depthStencil = { 1.0f, 0 };
