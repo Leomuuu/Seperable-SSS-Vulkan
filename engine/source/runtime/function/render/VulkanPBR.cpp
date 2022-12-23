@@ -249,8 +249,8 @@ namespace VlkEngine {
 	VulkanPBR::VulkanPBR(GLFWwindow* glfwwindow, VulkanEngine* vlkengine) :
 		VulkanBase(glfwwindow,vlkengine)
 	{
-		lightVertPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/pbr.vert.spv";
-		lightFragPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/pbr.frag.spv";
+		lightVertPath = SHADERDIR + "pbr.vert.spv";
+		lightFragPath = SHADERDIR + "pbr.frag.spv";
 	}
 
 	void VulkanPBR::StartVulkan()

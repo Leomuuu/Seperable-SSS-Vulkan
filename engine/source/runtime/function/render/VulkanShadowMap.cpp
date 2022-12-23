@@ -358,8 +358,8 @@ namespace VlkEngine {
 	VulkanShadowMap::VulkanShadowMap(GLFWwindow* glfwwindow, VulkanEngine* vlkengine):
 		VulkanPBR(glfwwindow,vlkengine)
 	{
-		lightVertPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/pbr_shadowmap.vert.spv";
-		lightFragPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/pbr_shadowmap.frag.spv";
+		lightVertPath = SHADERDIR+"pbr_shadowmap.vert.spv";
+		lightFragPath = SHADERDIR+"pbr_shadowmap.frag.spv";
 	}
 
 	void VulkanShadowMap::UpdateUniformBuffer(uint32_t currentImage)

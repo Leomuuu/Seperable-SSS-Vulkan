@@ -22,6 +22,8 @@ layout(location = 0) out vec4 outColor;
 
 float PI=3.141592653589793626;
 
+float SHADOWLIGHT=0.01f;
+
 float G_GeometrySmith(float dotNV, float dotNL, float roughness)
 {
 	float r = (roughness + 1.0);
@@ -85,7 +87,7 @@ float GetShadow(vec4 shadowCoordN , vec2 offset){
 		float dist = texture( shadowMapSampler, shadowCoordN.xy+offset).r;
 		if ( shadowCoordN.w > 0.0 && dist < shadowCoordN.z ) 
 		{
-			shadow = 0.0;
+			shadow = SHADOWLIGHT;
 		}
 	}
     return shadow;

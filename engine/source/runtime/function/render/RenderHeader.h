@@ -38,6 +38,9 @@
 namespace VlkEngine {
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
+	const std::string SHADERDIR = "../../../engine/shader/";
+	const std::string MODELDIR = "../../../engine/asset/";
+
 	struct Vertex {
 		glm::vec3 pos;
 		glm::vec3 color;

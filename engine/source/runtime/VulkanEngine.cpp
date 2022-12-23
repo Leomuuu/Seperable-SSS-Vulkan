@@ -57,15 +57,15 @@ namespace VlkEngine {
 
         modelManager = new PbrModelManager();
         modelManager->SetModel(
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/OBJ/Head/Head.OBJ",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Colour_8k.jpg");
+            MODELDIR + "model/Free+Head/OBJ/Head/Head.OBJ",
+            MODELDIR + "model/Free+Head/JPGTextures/Head/Colour_8k.jpg");
         modelManager->SetPbrTexture(
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Cavity_8k.jpg",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Gloss_8k.jpg",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Spec_8k.jpg",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/MicroNormal.jpg",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Normal.jpg",
-            "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/asset/model/Free+Head/JPGTextures/Head/Translucency.jpg"
+            MODELDIR + "model/Free+Head/JPGTextures/Head/Cavity_8k.jpg",
+            MODELDIR + "model/Free+Head/JPGTextures/Head/Gloss_8k.jpg",
+            MODELDIR + "model/Free+Head/JPGTextures/Head/Spec_8k.jpg",
+            MODELDIR + "model/Free+Head/JPGTextures/Head/MicroNormal.jpg",
+            MODELDIR + "model/Free+Head/JPGTextures/Head/Normal.jpg",
+            MODELDIR + "model/Free+Head/JPGTextures/Head/Translucency.jpg"
         );
         modelManager->instanceModelMatrix.push_back(glm::mat4(1.0f));
         modelManager->instanceModelMatrix.push_back(glm::translate(

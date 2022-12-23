@@ -1405,8 +1405,8 @@ namespace VlkEngine {
 	VulkanBase::VulkanBase(GLFWwindow* glfwwindow, VulkanEngine* vlkengine) :
 		window(glfwwindow),engine(vlkengine)
 	{
-		lightVertPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.vert.spv";
-		lightFragPath = "C:/Users/MU/Desktop/Graduation Project/code/MEngine/engine/shader/blinn_phong.frag.spv";
+		lightVertPath = SHADERDIR + "blinn_phong.vert.spv";
+		lightFragPath = SHADERDIR + "blinn_phong.frag.spv";
 	}
 
 	void VulkanBase::CreateVulkanResources()
