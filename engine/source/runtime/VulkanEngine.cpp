@@ -76,7 +76,7 @@ namespace VlkEngine {
                 glm::vec3(0.0, 1.0, 0.0)), glm::vec3(0.0f, 0.0f, -0.8f)));
         
 
-        vulkanBase = new VulkanShadowMap(window, this);
+        vulkanBase = new VulkanSSSS(window, this);
         
     }
 

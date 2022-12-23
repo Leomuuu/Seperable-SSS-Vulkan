@@ -9,7 +9,7 @@ namespace VlkEngine {
 	class VulkanShadowMap :public VulkanPBR {
 
 	protected:
-		// offscreen rendering
+		// offscreen shadow rendering
 		struct OffscreenPass {
 			int32_t width, height;
 			VkFramebuffer frameBuffer;
@@ -17,7 +17,7 @@ namespace VlkEngine {
 			VkImage image;
 			VkDeviceMemory deviceMemory;
 			VkImageView imageView;
-			VkSampler depthSampler;
+			VkSampler sampler;
 			VkDescriptorImageInfo descriptor;
 		} offscreenShadowPass;
 
@@ -53,14 +53,14 @@ namespace VlkEngine {
 
 
 	protected:
-		void CreateOffscreenRenderpass();
-		void CreateOffscreenImage();
-		void CreateOffscreenFrameBuffer();
-		void CreateOffscreenUniformBuffers();
-		void CreateOffscreenDescriptorSetLayout();
-		void CreateOffscreenDescriptorSets();
-		void CreateOffscreenPipeline();
-		void DestroyOffscreenResources();
+		void CreateOffscreenShadowRenderpass();
+		void CreateOffscreenShadowImage();
+		void CreateOffscreenShadowFrameBuffer();
+		void CreateOffscreenShadowUniformBuffers();
+		void CreateOffscreenShadowDescriptorSetLayout();
+		void CreateOffscreenShadowDescriptorSets();
+		void CreateOffscreenShadowPipeline();
+		void DestroyOffscreenShadowResources();
 		
 
 	public:
@@ -80,8 +80,5 @@ namespace VlkEngine {
 
 		// Graphics Pipeline
 		virtual void CreateGraphicsPipeline();
-
-		
-
 	};
 }

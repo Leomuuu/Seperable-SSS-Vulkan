@@ -3,7 +3,7 @@
 
 namespace VlkEngine {
 	
-	void VulkanShadowMap::CreateOffscreenRenderpass()
+	void VulkanShadowMap::CreateOffscreenShadowRenderpass()
 	{
 		VkAttachmentDescription attachmentDescription{};
 		attachmentDescription.format = DEPTH_FORMAT;
@@ -57,7 +57,7 @@ namespace VlkEngine {
 		}
 	}
 
-	void VulkanShadowMap::CreateOffscreenImage()
+	void VulkanShadowMap::CreateOffscreenShadowImage()
 	{
 		offscreenShadowPass.width = SHADOWMAP_DIMENSION;
 		offscreenShadowPass.height = SHADOWMAP_DIMENSION;
@@ -82,16 +82,16 @@ namespace VlkEngine {
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = 1.0f;
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		if (vkCreateSampler(device, &samplerInfo, nullptr, &offscreenShadowPass.depthSampler) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create offscreen sampler!");
+		if (vkCreateSampler(device, &samplerInfo, nullptr, &offscreenShadowPass.sampler) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create offscreen shadow sampler!");
 		}
 	}
 
-	void VulkanShadowMap::CreateOffscreenFrameBuffer()
+	void VulkanShadowMap::CreateOffscreenShadowFrameBuffer()
 	{
 		// Create frame buffer
 		VkFramebufferCreateInfo framebufferInfo{};
-
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferInfo.renderPass = offscreenShadowPass.renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = &offscreenShadowPass.imageView;
@@ -104,7 +104,7 @@ namespace VlkEngine {
 		}
 	}
 
-	void VulkanShadowMap::CreateOffscreenUniformBuffers()
+	void VulkanShadowMap::CreateOffscreenShadowUniformBuffers()
 	{
 		//dynamic
 		VkPhysicalDeviceProperties properties;
@@ -137,7 +137,7 @@ namespace VlkEngine {
 		}
 	}
 
-	void VulkanShadowMap::CreateOffscreenDescriptorSetLayout()
+	void VulkanShadowMap::CreateOffscreenShadowDescriptorSetLayout()
 	{
 		VkDescriptorSetLayoutBinding uboLayoutBinding{};
 		uboLayoutBinding.binding = 0;
@@ -164,7 +164,7 @@ namespace VlkEngine {
 		}
 	}
 
-	void VulkanShadowMap::CreateOffscreenDescriptorSets()
+	void VulkanShadowMap::CreateOffscreenShadowDescriptorSets()
 	{
 		// Descriptor pool
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
@@ -231,7 +231,7 @@ namespace VlkEngine {
 		}
 	}
 
-	void VulkanShadowMap::CreateOffscreenPipeline()
+	void VulkanShadowMap::CreateOffscreenShadowPipeline()
 	{
 		// vertex shader only
 		auto vertShaderCode = FileService::ReadFile(SHADERDIR+"offscreen.vert.spv");
@@ -355,9 +355,9 @@ namespace VlkEngine {
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	}
 
-	void VulkanShadowMap::DestroyOffscreenResources()
+	void VulkanShadowMap::DestroyOffscreenShadowResources()
 	{
-		vkDestroySampler(device, offscreenShadowPass.depthSampler, nullptr);
+		vkDestroySampler(device, offscreenShadowPass.sampler, nullptr);
 		vkDestroyImageView(device, offscreenShadowPass.imageView, nullptr);
 		vkDestroyImage(device, offscreenShadowPass.image, nullptr);
 		vkFreeMemory(device, offscreenShadowPass.deviceMemory, nullptr);
@@ -437,13 +437,13 @@ namespace VlkEngine {
 
 	void VulkanShadowMap::StartVulkan()
 	{		
-		CreateOffscreenImage();
-		CreateOffscreenRenderpass();
-		CreateOffscreenFrameBuffer();
-		CreateOffscreenUniformBuffers();
-		CreateOffscreenDescriptorSetLayout();
-		CreateOffscreenPipeline();
-		CreateOffscreenDescriptorSets();
+		CreateOffscreenShadowImage();
+		CreateOffscreenShadowRenderpass();
+		CreateOffscreenShadowFrameBuffer();
+		CreateOffscreenShadowUniformBuffers();
+		CreateOffscreenShadowDescriptorSetLayout();
+		CreateOffscreenShadowPipeline();
+		CreateOffscreenShadowDescriptorSets();
 		
 		VulkanPBR::StartVulkan();
 
@@ -451,7 +451,7 @@ namespace VlkEngine {
 
 	void VulkanShadowMap::ShutDownVulkan()
 	{
-		DestroyOffscreenResources();
+		DestroyOffscreenShadowResources();
 
 		VulkanPBR::ShutDownVulkan();
 	}
@@ -690,7 +690,7 @@ namespace VlkEngine {
 			VkDescriptorImageInfo offscreenimageInfo{};
 			offscreenimageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			offscreenimageInfo.imageView = offscreenShadowPass.imageView;
-			offscreenimageInfo.sampler = offscreenShadowPass.depthSampler;
+			offscreenimageInfo.sampler = offscreenShadowPass.sampler;
 
 			std::array<VkWriteDescriptorSet, 5> descriptorWrites{};
 

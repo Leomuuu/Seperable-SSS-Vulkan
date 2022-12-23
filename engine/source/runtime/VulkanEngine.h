@@ -3,6 +3,7 @@
 #include "function/render/VulkanBase.h"
 #include "function/render/VulkanPBR.h"
 #include "function/render/VulkanShadowMap.h"
+#include "function/render/VulkanSSSS.h"
 #include "function/render/Camera.h"
 #include "function/input/InputSystem.h"
 #include "resource/ModelManager.h"
@@ -15,6 +16,7 @@ namespace VlkEngine {
         friend class VulkanBase;
         friend class VulkanPBR;
         friend class VulkanShadowMap;
+        friend class VulkanSSSS;
     public:
         void Run(); 
         
