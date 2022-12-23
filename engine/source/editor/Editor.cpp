@@ -254,9 +254,9 @@ namespace VlkEngine {
 		static float lightposz = lightpos.z;
 		ImGui::Begin("Renderer Information");
 		ImGui::TextColored(ImVec4(1, 1, 0, 1), "Light Position");
-		ImGui::SliderFloat("lightposx", &lightposx, -20.0f, 20.0f);
-		ImGui::SliderFloat("lightposy", &lightposy, -20.0f, 20.0f);
-		ImGui::SliderFloat("lightposz", &lightposz, -20.0f, 20.0f);
+		ImGui::SliderFloat("lightposx", &lightposx, -5.0f, 5.0f);
+		ImGui::SliderFloat("lightposy", &lightposy, -5.0f, 5.0f);
+		ImGui::SliderFloat("lightposz", &lightposz, -5.0f, 5.0f);
 		renderEngine->lightPosition=glm::vec3(lightposx, lightposy, lightposz);
 
 		ImGui::TextColored(ImVec4(1, 1, 0, 1),"Camera Position");

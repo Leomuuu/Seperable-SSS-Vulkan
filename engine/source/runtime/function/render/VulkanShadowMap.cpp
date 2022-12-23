@@ -52,21 +52,21 @@ namespace VlkEngine {
 		renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
 		renderPassCreateInfo.pDependencies = dependencies.data();
 
-		if (vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &offscreenPass.renderPass)!=VK_SUCCESS) {
+		if (vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &offscreenShadowPass.renderPass)!=VK_SUCCESS) {
 			throw std::runtime_error("failed to create offscreen render pass!");
 		}
 	}
 
 	void VulkanShadowMap::CreateOffscreenImage()
 	{
-		offscreenPass.width = SHADOWMAP_DIMENSION;
-		offscreenPass.height = SHADOWMAP_DIMENSION;
+		offscreenShadowPass.width = SHADOWMAP_DIMENSION;
+		offscreenShadowPass.height = SHADOWMAP_DIMENSION;
 
 		// offscreen image imageview
-		CreateImage(offscreenPass.width, offscreenPass.height,
+		CreateImage(offscreenShadowPass.width, offscreenShadowPass.height,
 			DEPTH_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offscreenPass.image, offscreenPass.deviceMemory);
-		offscreenPass.imageView=CreateImageView(offscreenPass.image, DEPTH_FORMAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offscreenShadowPass.image, offscreenShadowPass.deviceMemory);
+		offscreenShadowPass.imageView=CreateImageView(offscreenShadowPass.image, DEPTH_FORMAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 		// Used to sample in the fragment shader for shadowed rendering
 		VkSamplerCreateInfo samplerInfo{};
@@ -82,7 +82,7 @@ namespace VlkEngine {
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = 1.0f;
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		if (vkCreateSampler(device, &samplerInfo, nullptr, &offscreenPass.depthSampler) != VK_SUCCESS) {
+		if (vkCreateSampler(device, &samplerInfo, nullptr, &offscreenShadowPass.depthSampler) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create offscreen sampler!");
 		}
 	}
@@ -92,14 +92,14 @@ namespace VlkEngine {
 		// Create frame buffer
 		VkFramebufferCreateInfo framebufferInfo{};
 
-		framebufferInfo.renderPass = offscreenPass.renderPass;
+		framebufferInfo.renderPass = offscreenShadowPass.renderPass;
 		framebufferInfo.attachmentCount = 1;
-		framebufferInfo.pAttachments = &offscreenPass.imageView;
-		framebufferInfo.width = offscreenPass.width;
-		framebufferInfo.height = offscreenPass.height;
+		framebufferInfo.pAttachments = &offscreenShadowPass.imageView;
+		framebufferInfo.width = offscreenShadowPass.width;
+		framebufferInfo.height = offscreenShadowPass.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &offscreenPass.frameBuffer) != VK_SUCCESS) {
+		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &offscreenShadowPass.frameBuffer) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create offscreen framebuffer!");
 		}
 	}
@@ -110,30 +110,30 @@ namespace VlkEngine {
 		VkPhysicalDeviceProperties properties;
 		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 		size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
-		offscreenUniformBuffer.dynamicAlignment = sizeof(glm::mat4);
+		offscreenShadowUniformBuffer.dynamicAlignment = sizeof(glm::mat4);
 		if (minUboAlignment > 0) {
-			offscreenUniformBuffer.dynamicAlignment = (offscreenUniformBuffer.dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+			offscreenShadowUniformBuffer.dynamicAlignment = (offscreenShadowUniformBuffer.dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
 		}
-		VkDeviceSize bufferSize = engine->modelManager->instanceModelMatrix.size() * offscreenUniformBuffer.dynamicAlignment;
-		offscreenUniformBuffer.uboDynamic.model = (glm::mat4*)alignedAlloc(bufferSize, offscreenUniformBuffer.dynamicAlignment);
+		VkDeviceSize bufferSize = engine->modelManager->instanceModelMatrix.size() * offscreenShadowUniformBuffer.dynamicAlignment;
+		offscreenShadowUniformBuffer.uboDynamic.model = (glm::mat4*)alignedAlloc(bufferSize, offscreenShadowUniformBuffer.dynamicAlignment);
 
-		offscreenUniformBuffer.dynamicUniformData.resize(MAX_FRAMES_IN_FLIGHT);
+		offscreenShadowUniformBuffer.dynamicUniformData.resize(MAX_FRAMES_IN_FLIGHT);
 
 		//normal
-		offscreenUniformBuffer.normalUBOAlignment = sizeof(MVPMatrix);
+		offscreenShadowUniformBuffer.normalUBOAlignment = sizeof(MVPMatrix);
 		if (minUboAlignment > 0) {
-			offscreenUniformBuffer.normalUBOAlignment = (offscreenUniformBuffer.normalUBOAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+			offscreenShadowUniformBuffer.normalUBOAlignment = (offscreenShadowUniformBuffer.normalUBOAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
 		}
-		bufferSize += offscreenUniformBuffer.normalUBOAlignment;
+		bufferSize += offscreenShadowUniformBuffer.normalUBOAlignment;
 
-		offscreenUniformBuffer.uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-		offscreenUniformBuffer.uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+		offscreenShadowUniformBuffer.uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		offscreenShadowUniformBuffer.uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, offscreenUniformBuffer.uniformBuffers[i], offscreenUniformBuffer.uniformBuffersMemory[i]);
-			vkMapMemory(device, offscreenUniformBuffer.uniformBuffersMemory[i], 0, engine->modelManager->instanceModelMatrix.size() * offscreenUniformBuffer.dynamicAlignment, 0, &offscreenUniformBuffer.dynamicUniformData[i]);
+				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, offscreenShadowUniformBuffer.uniformBuffers[i], offscreenShadowUniformBuffer.uniformBuffersMemory[i]);
+			vkMapMemory(device, offscreenShadowUniformBuffer.uniformBuffersMemory[i], 0, engine->modelManager->instanceModelMatrix.size() * offscreenShadowUniformBuffer.dynamicAlignment, 0, &offscreenShadowUniformBuffer.dynamicUniformData[i]);
 		}
 	}
 
@@ -159,7 +159,7 @@ namespace VlkEngine {
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		layoutInfo.pBindings = bindings.data();
 
-		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &offscreenDescriptor.descriptorSetLayout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &offscreenShadowDescriptor.descriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
@@ -179,38 +179,38 @@ namespace VlkEngine {
 		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &offscreenDescriptor.descriptorPool) != VK_SUCCESS) {
+		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &offscreenShadowDescriptor.descriptorPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 
 		// Descriptor sets
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, offscreenDescriptor.descriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, offscreenShadowDescriptor.descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = offscreenDescriptor.descriptorPool;
+		allocInfo.descriptorPool = offscreenShadowDescriptor.descriptorPool;
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		allocInfo.pSetLayouts = layouts.data();
 
-		offscreenDescriptor.descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-		if (vkAllocateDescriptorSets(device, &allocInfo, offscreenDescriptor.descriptorSets.data()) != VK_SUCCESS) {
+		offscreenShadowDescriptor.descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+		if (vkAllocateDescriptorSets(device, &allocInfo, offscreenShadowDescriptor.descriptorSets.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = offscreenUniformBuffer.uniformBuffers[i];
+			bufferInfo.buffer = offscreenShadowUniformBuffer.uniformBuffers[i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = offscreenUniformBuffer.normalUBOAlignment;
+			bufferInfo.range = offscreenShadowUniformBuffer.normalUBOAlignment;
 
 			VkDescriptorBufferInfo dynamicBufferInfo = {};
-			dynamicBufferInfo.buffer = offscreenUniformBuffer.uniformBuffers[i];
-			dynamicBufferInfo.offset = offscreenUniformBuffer.normalUBOAlignment;
-			dynamicBufferInfo.range = offscreenUniformBuffer.dynamicAlignment;
+			dynamicBufferInfo.buffer = offscreenShadowUniformBuffer.uniformBuffers[i];
+			dynamicBufferInfo.offset = offscreenShadowUniformBuffer.normalUBOAlignment;
+			dynamicBufferInfo.range = offscreenShadowUniformBuffer.dynamicAlignment;
 
 			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = offscreenDescriptor.descriptorSets[i];
+			descriptorWrites[0].dstSet = offscreenShadowDescriptor.descriptorSets[i];
 			descriptorWrites[0].dstBinding = 0;
 			descriptorWrites[0].dstArrayElement = 0;
 			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -218,7 +218,7 @@ namespace VlkEngine {
 			descriptorWrites[0].pBufferInfo = &bufferInfo;
 
 			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = offscreenDescriptor.descriptorSets[i];
+			descriptorWrites[1].dstSet = offscreenShadowDescriptor.descriptorSets[i];
 			descriptorWrites[1].dstBinding = 1;
 			descriptorWrites[1].dstArrayElement = 0;
 			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
@@ -324,8 +324,8 @@ namespace VlkEngine {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1; 
-		pipelineLayoutInfo.pSetLayouts = &(offscreenDescriptor.descriptorSetLayout);
-		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &offscreenPipeline.pipelineLayout) != VK_SUCCESS) {
+		pipelineLayoutInfo.pSetLayouts = &(offscreenShadowDescriptor.descriptorSetLayout);
+		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &offscreenShadowPipeline.pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
@@ -342,13 +342,13 @@ namespace VlkEngine {
 		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicState;
-		pipelineInfo.layout = offscreenPipeline.pipelineLayout;
-		pipelineInfo.renderPass = offscreenPass.renderPass;
+		pipelineInfo.layout = offscreenShadowPipeline.pipelineLayout;
+		pipelineInfo.renderPass = offscreenShadowPass.renderPass;
 		pipelineInfo.subpass = 0;
 		// creating a new graphics pipeline by deriving from an existing pipeline is allowed in Vulkan
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional   
 		pipelineInfo.basePipelineIndex = -1; // Optional
-		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &offscreenPipeline.Pipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &offscreenShadowPipeline.Pipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
@@ -372,18 +372,18 @@ namespace VlkEngine {
 		offscreenubo.proj = glm::perspective(glm::radians(engine->lightFov), 1.0f, shadowMapZNear, shadowMapZFar);
 		offscreenubo.proj[1][1] *= -1;
 
-		memcpy(offscreenUniformBuffer.dynamicUniformData[currentImage], &offscreenubo, sizeof(offscreenubo));
+		memcpy(offscreenShadowUniformBuffer.dynamicUniformData[currentImage], &offscreenubo, sizeof(offscreenubo));
 
 		uint32_t index = 0;
 		for (int i = 0; i < engine->modelManager->instanceModelMatrix.size(); i++)
 		{
-			glm::mat4* modelMat = (glm::mat4*)(((uint64_t)offscreenUniformBuffer.uboDynamic.model + (index * offscreenUniformBuffer.dynamicAlignment)));
+			glm::mat4* modelMat = (glm::mat4*)(((uint64_t)offscreenShadowUniformBuffer.uboDynamic.model + (index * offscreenShadowUniformBuffer.dynamicAlignment)));
 			*modelMat = engine->modelManager->instanceModelMatrix[i];
 			++index;
 		}
 
-		void* offscreendata = reinterpret_cast<size_t*>(offscreenUniformBuffer.dynamicUniformData[currentImage]) + offscreenUniformBuffer.normalUBOAlignment / sizeof(size_t);
-		memcpy(offscreendata, offscreenUniformBuffer.uboDynamic.model, engine->modelManager->instanceModelMatrix.size() * offscreenUniformBuffer.dynamicAlignment);
+		void* offscreendata = reinterpret_cast<size_t*>(offscreenShadowUniformBuffer.dynamicUniformData[currentImage]) + offscreenShadowUniformBuffer.normalUBOAlignment / sizeof(size_t);
+		memcpy(offscreendata, offscreenShadowUniformBuffer.uboDynamic.model, engine->modelManager->instanceModelMatrix.size() * offscreenShadowUniformBuffer.dynamicAlignment);
 	
 		
 		// light pass
@@ -456,10 +456,10 @@ namespace VlkEngine {
 
 			VkRenderPassBeginInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = offscreenPass.renderPass;
-			renderPassInfo.framebuffer = offscreenPass.frameBuffer;
-			renderPassInfo.renderArea.extent.width = offscreenPass.width;
-			renderPassInfo.renderArea.extent.height = offscreenPass.height;
+			renderPassInfo.renderPass = offscreenShadowPass.renderPass;
+			renderPassInfo.framebuffer = offscreenShadowPass.frameBuffer;
+			renderPassInfo.renderArea.extent.width = offscreenShadowPass.width;
+			renderPassInfo.renderArea.extent.height = offscreenShadowPass.height;
 			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 			renderPassInfo.pClearValues = clearValues.data();
 			vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -467,16 +467,16 @@ namespace VlkEngine {
 			VkViewport viewport{};
 			viewport.x = 0.0f;
 			viewport.y = 0.0f;
-			viewport.width = static_cast<float>(offscreenPass.width);
-			viewport.height = static_cast<float>(offscreenPass.height);
+			viewport.width = static_cast<float>(offscreenShadowPass.width);
+			viewport.height = static_cast<float>(offscreenShadowPass.height);
 			viewport.minDepth = 0.0f;
 			viewport.maxDepth = 1.0f;
 			vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 			VkRect2D scissor{};
 			scissor.offset = { 0, 0 };
-			scissor.extent.width = offscreenPass.width;
-			scissor.extent.height = offscreenPass.height;
+			scissor.extent.width = offscreenShadowPass.width;
+			scissor.extent.height = offscreenShadowPass.height;
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 			vkCmdSetDepthBias(
@@ -485,7 +485,7 @@ namespace VlkEngine {
 				0.0f,
 				depthBiasSlope);
 
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline.Pipeline);
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenShadowPipeline.Pipeline);
 
 			VkBuffer vertexBuffers[] = { vertexBuffer };
 			VkDeviceSize offsets[] = { 0 };
@@ -495,8 +495,8 @@ namespace VlkEngine {
 
 			for (uint32_t j = 0; j < engine->modelManager->instanceModelMatrix.size(); ++j)
 			{
-				uint32_t dynamicOffset = j * static_cast<uint32_t>(offscreenUniformBuffer.dynamicAlignment);
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline.pipelineLayout, 0, 1, &offscreenDescriptor.descriptorSets[currentFrame], 1, &dynamicOffset);
+				uint32_t dynamicOffset = j * static_cast<uint32_t>(offscreenShadowUniformBuffer.dynamicAlignment);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenShadowPipeline.pipelineLayout, 0, 1, &offscreenShadowDescriptor.descriptorSets[currentFrame], 1, &dynamicOffset);
 				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(engine->modelManager->indices.size()), engine->modelManager->instanceModelMatrix.size(), 0, 0, 0);
 			}
 
@@ -669,8 +669,8 @@ namespace VlkEngine {
 
 			VkDescriptorImageInfo offscreenimageInfo{};
 			offscreenimageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			offscreenimageInfo.imageView = offscreenPass.imageView;
-			offscreenimageInfo.sampler = offscreenPass.depthSampler;
+			offscreenimageInfo.imageView = offscreenShadowPass.imageView;
+			offscreenimageInfo.sampler = offscreenShadowPass.depthSampler;
 
 			std::array<VkWriteDescriptorSet, 5> descriptorWrites{};
 

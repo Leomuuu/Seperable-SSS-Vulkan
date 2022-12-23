@@ -1,7 +1,7 @@
 #pragma once
 #include "VulkanPBR.h"
 
-#define SHADOWMAP_DIMENSION 4096
+#define SHADOWMAP_DIMENSION 2048
 #define DEPTH_FORMAT VK_FORMAT_D16_UNORM
 
 
@@ -19,13 +19,13 @@ namespace VlkEngine {
 			VkImageView imageView;
 			VkSampler depthSampler;
 			VkDescriptorImageInfo descriptor;
-		} offscreenPass;
+		} offscreenShadowPass;
 
 		struct OffscreenDescriptor {
 			VkDescriptorSetLayout descriptorSetLayout;
 			VkDescriptorPool descriptorPool;
 			std::vector<VkDescriptorSet> descriptorSets;
-		}offscreenDescriptor;
+		}offscreenShadowDescriptor;
 
 		struct OffscreenUniformBuffer {
 			std::vector<VkBuffer> uniformBuffers;
@@ -34,16 +34,16 @@ namespace VlkEngine {
 			size_t dynamicAlignment;
 			size_t normalUBOAlignment;
 			DynamicUBO uboDynamic;
-		}offscreenUniformBuffer;
+		}offscreenShadowUniformBuffer;
 
 		struct OffscreenPipeline {
 			VkPipeline Pipeline;
 			VkPipelineLayout pipelineLayout;
-		}offscreenPipeline;
+		}offscreenShadowPipeline;
 		
 
 		float shadowMapZNear = 0.1f;
-		float shadowMapZFar = 25.0f;
+		float shadowMapZFar = 10.0f;
 		// Depth bias (and slope) are used to avoid shadowing artifacts
 		// Constant depth bias factor (always applied)
 		float depthBiasConstant = 1.25f;

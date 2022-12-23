@@ -60,7 +60,7 @@ namespace VlkEngine {
         // light
         glm::vec3 lightPosition=glm::vec3(2);
         glm::vec3 lightRadiance = glm::vec3(6);
-        float lightFov = 45.0f;
+        float lightFov = 30.0f;
 
     };
 }
