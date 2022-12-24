@@ -14,7 +14,6 @@ namespace VlkEngine {
 			VkDeviceMemory deviceMemory;
 			VkImageView imageView;
 			VkSampler sampler;
-			VkDescriptorImageInfo descriptor;
 		} offscreenLightPass;
 
 		struct OffscreenDescriptor {
@@ -42,6 +41,11 @@ namespace VlkEngine {
 			VkPipelineLayout pipelineLayout;
 		}offscreenLightPipeline;
 
+		struct OffscreenDepthResource {
+			VkImage depthImage;
+			VkDeviceMemory depthImageMemory;
+			VkImageView depthImageView;
+		} offscreenLightDepthResource;
 
 	protected:
 		void CreateOffscreenLightRenderpass();
@@ -51,7 +55,9 @@ namespace VlkEngine {
 		void CreateOffscreenLightDescriptorSetLayout();
 		void CreateOffscreenLightDescriptorSets();
 		void CreateOffscreenLightPipeline();
+		void CreateOffscreenLightDepthResource();
 		void DestroyOffscreenLightResources();
+
 
 	public:
 		VulkanSSSS(GLFWwindow* glfwwindow, VulkanEngine* vlkengine);
@@ -63,6 +69,13 @@ namespace VlkEngine {
 		virtual void UpdateUniformBuffer(uint32_t currentImage);
 
 	protected:
+		// Main Pass
+		// Descriptor
+		virtual void CreateDescriptorSetLayout();
+		virtual void CreateDescriptorPool();
+		virtual void CreateDescriptorSets();
+		// Graphics Pipeline
+		virtual void CreateGraphicsPipeline();
 
 
 	};

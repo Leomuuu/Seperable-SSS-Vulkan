@@ -1,12 +1,17 @@
 #version 450
 
 layout(location = 0) in vec4 shadowCoord;
-layout(location = 1) in vec4 lightCoord;
 
 layout(binding = 2) uniform sampler2D lightSampler;
 layout(binding = 3) uniform sampler2D shadowMapSampler;
 
+layout(push_constant) uniform PushConsts {
+	vec2 windowSize;
+} pushConsts;
+
 layout(location = 0) out vec4 outColor;
+
+
 
 // shadow
 float GetShadow(vec4 shadowCoordN , vec2 offset){
@@ -51,8 +56,9 @@ void main() {
     float shadow=PCF( shadowCoordN );
 
 	// light
-	vec4 light=texture(lightSampler,lightCoord.xy/2+vec2(0.5));
+	vec2 lightCoord=vec2(gl_FragCoord.x/pushConsts.windowSize.x,gl_FragCoord.y/pushConsts.windowSize.y);
+	vec4 light=vec4(texture(lightSampler,lightCoord.xy).xyz,1.0);
 
-	outColor=shadow*light;
+	outColor= light*shadow;
 
 }

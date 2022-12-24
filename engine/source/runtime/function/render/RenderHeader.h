@@ -107,6 +107,7 @@ namespace VlkEngine {
 		glm::vec3 lightRadiance;
 	};
 
+
 }
 
 namespace std {
