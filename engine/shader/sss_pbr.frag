@@ -14,7 +14,8 @@ layout(binding = 3) uniform FragUniform {
     vec3 lightradiance;
 } fragubo;
 
-layout(location = 0) out vec4 outColor;
+layout(location = 0) out vec4 outColor0;
+layout(location = 1) out vec4 outColor1;
 
 
 float PI=3.141592653589793626;
@@ -104,8 +105,9 @@ void main() {
     vec3 specularTerm= (F*D*G)/max(4*dotNL*dotNV,1e-6 );
     vec3 diffuseTerm= albedo/PI;
 
-    vec3 result= (kd*diffuseTerm+(1-kd)*specularTerm)*dotNL*fragubo.lightradiance;
+    vec3 result0= (kd*diffuseTerm)*dotNL*fragubo.lightradiance;
+    vec3 result1= ((1-kd)*specularTerm)*dotNL*fragubo.lightradiance;
 
-    outColor= vec4(result,1.0);
-    
+    outColor0= vec4(result0,1.0);
+    outColor1= vec4(result1,1.0);
 }

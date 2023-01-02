@@ -2,7 +2,7 @@
 
 layout(location = 0) in vec4 shadowCoord;
 
-layout(binding = 2) uniform sampler2D lightSampler;
+layout(binding = 2) uniform sampler2D lightSampler[2];
 layout(binding = 3) uniform sampler2D shadowMapSampler;
 
 layout(push_constant) uniform PushConsts {
@@ -57,8 +57,9 @@ void main() {
 
 	// light
 	vec2 lightCoord=vec2(gl_FragCoord.x/pushConsts.windowSize.x,gl_FragCoord.y/pushConsts.windowSize.y);
-	vec4 light=vec4(texture(lightSampler,lightCoord.xy).xyz,1.0);
+	vec4 light0=vec4(texture(lightSampler[0],lightCoord.xy).xyz,1.0);
+	vec4 light1=vec4(texture(lightSampler[1],lightCoord.xy).xyz,1.0);
 
-	outColor= light*shadow;
+	outColor= (light0+light1)*shadow;
 
 }

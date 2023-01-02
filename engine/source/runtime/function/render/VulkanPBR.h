@@ -10,7 +10,6 @@ namespace VlkEngine {
 		VkImage pbrTextureImage[6];
 		VkDeviceMemory pbrTextureImageMemory[6];
 		VkImageView pbrTextureImageView[6];
-		VkSampler pbrTextureSampler[6];
 
 	protected:
 		// TextureImage

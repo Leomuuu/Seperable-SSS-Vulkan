@@ -10,9 +10,9 @@ namespace VlkEngine {
 			int32_t width, height;
 			VkFramebuffer frameBuffer;
 			VkRenderPass renderPass;
-			VkImage image;
-			VkDeviceMemory deviceMemory;
-			VkImageView imageView;
+			VkImage image[2];
+			VkDeviceMemory deviceMemory[2];
+			VkImageView imageView[2];
 			VkSampler sampler;
 		} offscreenLightPass;
 

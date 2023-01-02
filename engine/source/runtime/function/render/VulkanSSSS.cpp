@@ -5,15 +5,17 @@ namespace VlkEngine {
 
 	void VulkanSSSS::CreateOffscreenLightRenderpass()
 	{
-		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = swapChainImageFormat;
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		std::array<VkAttachmentDescription,2> colorAttachment;
+		for (int i = 0; i < 2; i++) {
+			colorAttachment[i].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+			colorAttachment[i].samples = VK_SAMPLE_COUNT_1_BIT;
+			colorAttachment[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			colorAttachment[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			colorAttachment[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			colorAttachment[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			colorAttachment[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			colorAttachment[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
 
 		VkAttachmentDescription depthAttachment{};
 		depthAttachment.format = FindDepthFormat();
@@ -25,18 +27,20 @@ namespace VlkEngine {
 		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
-		VkAttachmentReference colorAttachmentRef{};
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		std::array<VkAttachmentDescription, 3> attachments = { colorAttachment[0],colorAttachment[1], depthAttachment };
+
+		std::vector<VkAttachmentReference> colorAttachmentRef;
+		colorAttachmentRef.push_back({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+		colorAttachmentRef.push_back({ 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
 
 		VkAttachmentReference depthAttachmentRef{};
-		depthAttachmentRef.attachment = 1;
+		depthAttachmentRef.attachment = 2;
 		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpass{};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
+		subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRef.size());
+		subpass.pColorAttachments = colorAttachmentRef.data();
 		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 		std::array<VkSubpassDependency, 2> dependencies;
@@ -55,7 +59,6 @@ namespace VlkEngine {
 		dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-		std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -75,11 +78,13 @@ namespace VlkEngine {
 		offscreenLightPass.width = swapChainExtent.width;
 		offscreenLightPass.height = swapChainExtent.height;
 
-		CreateImage(offscreenLightPass.width, offscreenLightPass.height,
-			swapChainImageFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offscreenLightPass.image, offscreenLightPass.deviceMemory);
-		offscreenLightPass.imageView = CreateImageView(offscreenLightPass.image, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
-	
+		for (int i = 0; i < 2; i++) {
+			CreateImage(offscreenLightPass.width, offscreenLightPass.height,
+				swapChainImageFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offscreenLightPass.image[i], offscreenLightPass.deviceMemory[i]);
+			offscreenLightPass.imageView[i] = CreateImageView(offscreenLightPass.image[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		}
+
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -96,6 +101,7 @@ namespace VlkEngine {
 		if (vkCreateSampler(device, &samplerInfo, nullptr, &offscreenLightPass.sampler) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create offscreen light sampler!");
 		}
+		
 
 	}
 
@@ -109,8 +115,9 @@ namespace VlkEngine {
 	void VulkanSSSS::CreateOffscreenLightFrameBuffer()
 	{
 		// Create frame buffer
-		std::array<VkImageView, 2> attachments = {
-			offscreenLightPass.imageView,
+		std::array<VkImageView, 3> attachments = {
+			offscreenLightPass.imageView[0],
+			offscreenLightPass.imageView[1],
 			offscreenLightDepthResource.depthImageView
 		};
 
@@ -263,7 +270,7 @@ namespace VlkEngine {
 			for (int i = 0; i < 6; i++) {
 				imageInfo[i + 1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				imageInfo[i + 1].imageView = pbrTextureImageView[i];
-				imageInfo[i + 1].sampler = pbrTextureSampler[i];
+				imageInfo[i + 1].sampler =textureSampler;
 			}
 
 			VkDescriptorBufferInfo fragbufferInfo{};
@@ -313,8 +320,8 @@ namespace VlkEngine {
 
 	void VulkanSSSS::CreateOffscreenLightPipeline()
 	{
-		auto vertShaderCode = FileService::ReadFile(SHADERDIR + "pbr.vert.spv");
-		auto fragShaderCode = FileService::ReadFile(SHADERDIR + "pbr.frag.spv");
+		auto vertShaderCode = FileService::ReadFile(SHADERDIR + "sss_pbr.vert.spv");
+		auto fragShaderCode = FileService::ReadFile(SHADERDIR + "sss_pbr.frag.spv");
 
 		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
 		VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -392,15 +399,17 @@ namespace VlkEngine {
 		depthStencil.stencilTestEnable = VK_FALSE;
 
 		/*Color blending*/
-		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment.blendEnable = VK_FALSE;
+		std::array<VkPipelineColorBlendAttachmentState,2> colorBlendAttachment;
+		for (int i = 0; i < 2; i++) {
+			colorBlendAttachment[i].colorWriteMask = 0xf;
+			colorBlendAttachment[i].blendEnable = VK_FALSE;
+		}
 
 		VkPipelineColorBlendStateCreateInfo colorBlending{};
 		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 		colorBlending.logicOpEnable = VK_FALSE;
-		colorBlending.attachmentCount = 1;
-		colorBlending.pAttachments = &colorBlendAttachment;
+		colorBlending.attachmentCount = static_cast<uint32_t>(colorBlendAttachment.size());;
+		colorBlending.pAttachments = colorBlendAttachment.data();
 
 		/*Pipeline layout*/
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -446,11 +455,14 @@ namespace VlkEngine {
 	}
 
 	void VulkanSSSS::DestroyOffscreenLightResources()
-	{
+	{	
 		vkDestroySampler(device, offscreenLightPass.sampler, nullptr);
-		vkDestroyImageView(device, offscreenLightPass.imageView, nullptr);
-		vkDestroyImage(device, offscreenLightPass.image, nullptr);
-		vkFreeMemory(device, offscreenLightPass.deviceMemory, nullptr);
+		for (int i = 0; i < 2; i++) {
+			
+			vkDestroyImageView(device, offscreenLightPass.imageView[i], nullptr);
+			vkDestroyImage(device, offscreenLightPass.image[i], nullptr);
+			vkFreeMemory(device, offscreenLightPass.deviceMemory[i], nullptr);
+		}
 		vkDestroyRenderPass(device, offscreenLightPass.renderPass, nullptr);
 		vkDestroyDescriptorPool(device, offscreenLightDescriptor.descriptorPool, nullptr);
 		vkDestroyDescriptorSetLayout(device, offscreenLightDescriptor.descriptorSetLayout, nullptr);
@@ -565,9 +577,10 @@ namespace VlkEngine {
 
 		// light pass
 		{
-			std::array<VkClearValue, 2> clearValues{};
+			std::array<VkClearValue, 3> clearValues{};
 			clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-			clearValues[1].depthStencil = { 1.0f, 0 };
+			clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+			clearValues[2].depthStencil = { 1.0f, 0 };
 
 			VkRenderPassBeginInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -751,7 +764,7 @@ namespace VlkEngine {
 
 		VkDescriptorSetLayoutBinding lightSamplerLayoutBinding{};
 		lightSamplerLayoutBinding.binding = 2;
-		lightSamplerLayoutBinding.descriptorCount = 1;
+		lightSamplerLayoutBinding.descriptorCount = 2;
 		lightSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		lightSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -783,7 +796,7 @@ namespace VlkEngine {
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[2].descriptorCount = 2*static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
@@ -823,10 +836,12 @@ namespace VlkEngine {
 			dynamicBufferInfo.offset = normalUBOAlignment;
 			dynamicBufferInfo.range = dynamicAlignment;
 
-			VkDescriptorImageInfo lightImageInfo{};
-			lightImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			lightImageInfo.imageView = offscreenLightPass.imageView;
-			lightImageInfo.sampler = offscreenLightPass.sampler;
+			std::array<VkDescriptorImageInfo,2> lightImageInfo;
+			for (int i = 0; i < 2; i++) {
+				lightImageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				lightImageInfo[i].imageView = offscreenLightPass.imageView[i];
+				lightImageInfo[i].sampler = offscreenLightPass.sampler;
+			}
 
 
 			VkDescriptorImageInfo shadowImageInfo{};
@@ -858,8 +873,8 @@ namespace VlkEngine {
 			descriptorWrites[2].dstBinding = 2;
 			descriptorWrites[2].dstArrayElement = 0;
 			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[2].descriptorCount = 1;
-			descriptorWrites[2].pImageInfo = &lightImageInfo;
+			descriptorWrites[2].descriptorCount = static_cast<uint32_t>(lightImageInfo.size());
+			descriptorWrites[2].pImageInfo = lightImageInfo.data();
 
 			descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[3].dstSet = descriptorSets[i];

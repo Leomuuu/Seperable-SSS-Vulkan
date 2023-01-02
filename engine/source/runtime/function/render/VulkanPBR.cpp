@@ -76,7 +76,7 @@ namespace VlkEngine {
 			samplerInfo.minLod = 0.0f;
 			samplerInfo.maxLod = 0.0f;
 
-			if (vkCreateSampler(device, &samplerInfo, nullptr, &(pbrTextureSampler[i])) != VK_SUCCESS) {
+			if (vkCreateSampler(device, &samplerInfo, nullptr, &(textureSampler)) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create texture sampler!");
 			}
 		}
@@ -85,7 +85,6 @@ namespace VlkEngine {
 	void VulkanPBR::DestroyTexture()
 	{
 		for (int i = 0; i < 6; i++) {
-			vkDestroySampler(device, pbrTextureSampler[i], nullptr);
 			vkDestroyImageView(device, pbrTextureImageView[i], nullptr);
 			vkDestroyImage(device, pbrTextureImage[i], nullptr);
 			vkFreeMemory(device, pbrTextureImageMemory[i], nullptr);
@@ -192,7 +191,7 @@ namespace VlkEngine {
 			for (int i = 0; i < 6; i++) {
 				imageInfo[i+1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				imageInfo[i+1].imageView = pbrTextureImageView[i];
-				imageInfo[i+1].sampler = pbrTextureSampler[i];
+				imageInfo[i+1].sampler = textureSampler;
 			}
 
 

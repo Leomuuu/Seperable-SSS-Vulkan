@@ -678,7 +678,7 @@ namespace VlkEngine {
 			for (int i = 0; i < 6; i++) {
 				imageInfo[i + 1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				imageInfo[i + 1].imageView = pbrTextureImageView[i];
-				imageInfo[i + 1].sampler = pbrTextureSampler[i];
+				imageInfo[i + 1].sampler = textureSampler;
 			}
 
 			VkDescriptorBufferInfo fragbufferInfo{};
