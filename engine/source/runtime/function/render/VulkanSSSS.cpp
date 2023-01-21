@@ -101,8 +101,6 @@ namespace VlkEngine {
 		if (vkCreateSampler(device, &samplerInfo, nullptr, &offscreenLightPass.sampler) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create offscreen light sampler!");
 		}
-		
-
 	}
 
 	VulkanSSSS::VulkanSSSS(GLFWwindow* glfwwindow, VulkanEngine* vlkengine)
@@ -118,7 +116,7 @@ namespace VlkEngine {
 		std::array<VkImageView, 3> attachments = {
 			offscreenLightPass.imageView[0],
 			offscreenLightPass.imageView[1],
-			offscreenLightDepthResource.depthImageView
+			offscreenDepthResource.depthImageView
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -444,14 +442,14 @@ namespace VlkEngine {
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	}
 
-	void VulkanSSSS::CreateOffscreenLightDepthResource()
+	void VulkanSSSS::CreateOffscreenDepthResource()
 	{
 		VkFormat depthFormat = FindDepthFormat();
 
 		CreateImage(swapChainExtent.width, swapChainExtent.height,
 			depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offscreenLightDepthResource.depthImage, offscreenLightDepthResource.depthImageMemory);
-		offscreenLightDepthResource.depthImageView = CreateImageView(offscreenLightDepthResource.depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offscreenDepthResource.depthImage, offscreenDepthResource.depthImageMemory);
+		offscreenDepthResource.depthImageView = CreateImageView(offscreenDepthResource.depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 	}
 
 	void VulkanSSSS::DestroyOffscreenLightResources()
@@ -475,20 +473,375 @@ namespace VlkEngine {
 		vkDestroyFramebuffer(device, offscreenLightPass.frameBuffer, nullptr);
 	}
 
+	void VulkanSSSS::CreateSSSBlurImage()
+	{
+		for (int i = 0; i < 2; i++) {
+			CreateImage(offscreenLightPass.width, offscreenLightPass.height,
+				swapChainImageFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sssBlurPass.image[i], sssBlurPass.deviceMemory[i]);
+			sssBlurPass.imageView[i] = CreateImageView(sssBlurPass.image[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		}
+	}
+
+	void VulkanSSSS::CreareSSSBlurRenderPass()
+	{
+		VkAttachmentDescription colorAttachment{};
+		colorAttachment.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		std::array<VkAttachmentDescription,1> attachments = { colorAttachment};
+
+		VkAttachmentReference colorAttachmentRef{};
+		colorAttachmentRef.attachment = 0;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription subpass{};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &colorAttachmentRef;
+		subpass.pDepthStencilAttachment = nullptr;
+
+		std::array<VkSubpassDependency, 2> dependencies;
+		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[0].dstSubpass = 0;
+		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		dependencies[1].srcSubpass = 0;
+		dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		VkRenderPassCreateInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		renderPassInfo.pAttachments = attachments.data();
+		renderPassInfo.subpassCount = 1;
+		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = 2;
+		renderPassInfo.pDependencies = dependencies.data();
+
+		for (int i = 0; i < 2; i++) {
+			if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &sssBlurPass.renderPass[i]) != VK_SUCCESS) {
+				throw std::runtime_error("failed to create render pass!");
+			}
+		}
+
+	}
+
+	void VulkanSSSS::CreareSSSBlurFrameBuffer()
+	{
+		for (int i = 0; i < 2; i++) {
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = sssBlurPass.renderPass[i];
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = &sssBlurPass.imageView[i];
+			framebufferInfo.width = offscreenLightPass.width;
+			framebufferInfo.height = offscreenLightPass.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &sssBlurPass.frameBuffer[i]) != VK_SUCCESS) {
+				throw std::runtime_error("failed to create offscreen framebuffer!");
+			}
+		}
+	}
+
+	void VulkanSSSS::CreateSSSBlurDescriptorSetLayout()
+	{
+		VkDescriptorSetLayoutBinding uboLayoutBinding{};
+		uboLayoutBinding.binding = 0;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VkDescriptorSetLayoutBinding uboDynamicLayoutBinding = {};
+		uboDynamicLayoutBinding.binding = 1;
+		uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		uboDynamicLayoutBinding.descriptorCount = 1;
+		uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VkDescriptorSetLayoutBinding lightSamplerLayoutBinding{};
+		lightSamplerLayoutBinding.binding = 2;
+		lightSamplerLayoutBinding.descriptorCount = 1;
+		lightSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		lightSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		VkDescriptorSetLayoutBinding shadowSamplerLayoutBinding{};
+		shadowSamplerLayoutBinding.binding = 3;
+		shadowSamplerLayoutBinding.descriptorCount = 1;
+		shadowSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		shadowSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 4> bindings =
+		{ uboLayoutBinding,uboDynamicLayoutBinding ,lightSamplerLayoutBinding,
+		shadowSamplerLayoutBinding };
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		layoutInfo.pBindings = bindings.data();
+
+		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &sssBlurDescriptor.descriptorSetLayout) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	void VulkanSSSS::CreateSSSBlurPipeline()
+	{
+		auto vertShaderCode = FileService::ReadFile(SHADERDIR + "sss_blur.vert.spv");
+		auto fragShaderCode = FileService::ReadFile(SHADERDIR + "sss_blur.frag.spv");
+
+		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
+		VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = vertShaderModule;
+		vertShaderStageInfo.pName = "main";
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = fragShaderModule;
+		fragShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+		std::vector<VkDynamicState> dynamicStates = {
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR
+		};
+		VkPipelineDynamicStateCreateInfo dynamicState{};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+		dynamicState.pDynamicStates = dynamicStates.data();
+
+		auto bindingDescription = Vertex::GetBindingDescription();
+		auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.scissorCount = 1;
+
+		VkPipelineRasterizationStateCreateInfo rasterizer{};
+		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizer.depthClampEnable = VK_FALSE; // can be used in shadow map
+		rasterizer.rasterizerDiscardEnable = VK_FALSE;
+		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizer.lineWidth = 1.0f;
+		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+		/*Multisample*/
+		VkPipelineMultisampleStateCreateInfo multisampling{};
+		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampling.sampleShadingEnable = VK_FALSE;
+		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+		/*Depth and stencil testing*/
+		VkPipelineDepthStencilStateCreateInfo depthStencil{};
+		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencil.depthTestEnable = VK_TRUE;
+		depthStencil.depthWriteEnable = VK_TRUE;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+
+		/*Color blending*/
+		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		colorBlendAttachment.blendEnable = VK_FALSE;
+		VkPipelineColorBlendStateCreateInfo colorBlending{};
+		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlending.attachmentCount = 1;
+		colorBlending.pAttachments = &colorBlendAttachment;
+
+		VkPushConstantRange pushConstantRange{};
+		pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		pushConstantRange.offset = 0;
+		pushConstantRange.size = sizeof(SSSBlurPushConsts);
+
+		/*Pipeline layout*/
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &(sssBlurDescriptor.descriptorSetLayout);
+		pipelineLayoutInfo.pushConstantRangeCount = 1;
+		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &sssBlurPipeline.pipelineLayout) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+
+		/*GraphicsPipeline*/
+		for (int i = 0; i < 2; i++) {
+			VkGraphicsPipelineCreateInfo pipelineInfo{};
+			pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+			pipelineInfo.stageCount = 2;
+			pipelineInfo.pStages = shaderStages;
+			pipelineInfo.pVertexInputState = &vertexInputInfo;
+			pipelineInfo.pInputAssemblyState = &inputAssembly;
+			pipelineInfo.pViewportState = &viewportState;
+			pipelineInfo.pRasterizationState = &rasterizer;
+			pipelineInfo.pMultisampleState = &multisampling;
+			pipelineInfo.pDepthStencilState = &depthStencil;
+			pipelineInfo.pColorBlendState = &colorBlending;
+			pipelineInfo.pDynamicState = &dynamicState;
+			pipelineInfo.layout = sssBlurPipeline.pipelineLayout;
+			pipelineInfo.renderPass = sssBlurPass.renderPass[i];
+			pipelineInfo.subpass = 0;
+			if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &sssBlurPipeline.pipeline[i]) != VK_SUCCESS) {
+				throw std::runtime_error("failed to create graphics pipeline!");
+			}
+		}
+
+		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	}
+
+	void VulkanSSSS::CreateSSSBlurDescriptorSets()
+	{
+		// descriptor pool
+		std::array<VkDescriptorPoolSize, 8> poolSizes{};
+		for (int i = 0; i < 2; i++) {
+			poolSizes[i * 4 + 0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			poolSizes[i * 4 + 0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+			poolSizes[i * 4 + 1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			poolSizes[i * 4 + 1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+			poolSizes[i * 4 + 2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			poolSizes[i * 4 + 2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+			poolSizes[i * 4 + 3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			poolSizes[i * 4 + 3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		}
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolInfo.pPoolSizes = poolSizes.data();
+		poolInfo.maxSets = static_cast<uint32_t>(2*MAX_FRAMES_IN_FLIGHT);
+
+		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &sssBlurDescriptor.descriptorPool) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+
+		// descriptor sets
+		std::vector<VkDescriptorSetLayout> layouts(2*MAX_FRAMES_IN_FLIGHT, sssBlurDescriptor.descriptorSetLayout);
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = sssBlurDescriptor.descriptorPool;
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(2*MAX_FRAMES_IN_FLIGHT);
+		allocInfo.pSetLayouts = layouts.data();
+
+		sssBlurDescriptor.descriptorSets.resize(2*MAX_FRAMES_IN_FLIGHT);
+		if (vkAllocateDescriptorSets(device, &allocInfo, sssBlurDescriptor.descriptorSets.data()) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			for (int j = 0; j < 2; j++) {
+				// 2 pass blur
+				VkDescriptorBufferInfo bufferInfo{};
+				bufferInfo.buffer = uniformBuffers[i];
+				bufferInfo.offset = 0;
+				bufferInfo.range = normalUBOAlignment;
+
+				VkDescriptorBufferInfo dynamicBufferInfo = {};
+				dynamicBufferInfo.buffer = uniformBuffers[i];
+				dynamicBufferInfo.offset = normalUBOAlignment;
+				dynamicBufferInfo.range = dynamicAlignment;
+
+				VkDescriptorImageInfo colorImageInfo{};
+				colorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				colorImageInfo.imageView = (j == 0) ? offscreenLightPass.imageView[0] : sssBlurPass.imageView[0];
+				colorImageInfo.sampler = offscreenLightPass.sampler;
+
+				VkDescriptorImageInfo depthImageInfo{};
+				depthImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				depthImageInfo.imageView = offscreenDepthResource.depthImageView;
+				depthImageInfo.sampler = offscreenLightPass.sampler;
+
+				std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
+				descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[0].dstSet = sssBlurDescriptor.descriptorSets[i * 2 + j];
+				descriptorWrites[0].dstBinding = 0;
+				descriptorWrites[0].dstArrayElement = 0;
+				descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrites[0].descriptorCount = 1;
+				descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+				descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[1].dstSet = sssBlurDescriptor.descriptorSets[i * 2 + j];
+				descriptorWrites[1].dstBinding = 1;
+				descriptorWrites[1].dstArrayElement = 0;
+				descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+				descriptorWrites[1].descriptorCount = 1;
+				descriptorWrites[1].pBufferInfo = &dynamicBufferInfo;
+				descriptorWrites[1].pTexelBufferView = nullptr;
+
+				descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[2].dstSet = sssBlurDescriptor.descriptorSets[i * 2 + j];
+				descriptorWrites[2].dstBinding = 2;
+				descriptorWrites[2].dstArrayElement = 0;
+				descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrites[2].descriptorCount = 1;
+				descriptorWrites[2].pImageInfo = &colorImageInfo;
+
+				descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[3].dstSet = sssBlurDescriptor.descriptorSets[i * 2 + j];
+				descriptorWrites[3].dstBinding = 3;
+				descriptorWrites[3].dstArrayElement = 0;
+				descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrites[3].descriptorCount = 1;
+				descriptorWrites[3].pImageInfo = &depthImageInfo;
+
+				vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()),
+					descriptorWrites.data(), 0, nullptr);
+			}
+		}
+	}
+
 	void VulkanSSSS::StartVulkan()
 	{
 
 		CreateOffscreenLightImage();
-		CreateOffscreenLightDepthResource();
+		CreateSSSBlurImage();
+		CreateOffscreenDepthResource();
 		CreateOffscreenLightRenderpass();
+		CreareSSSBlurRenderPass();
 		
 		VulkanShadowMap::StartVulkan();	
 		
 		CreateOffscreenLightFrameBuffer();
+		CreareSSSBlurFrameBuffer();
 		CreateOffscreenLightUniformBuffers();
 		CreateOffscreenLightDescriptorSetLayout();
+		CreateSSSBlurDescriptorSetLayout();
 		CreateOffscreenLightPipeline();
+		CreateSSSBlurPipeline();
 		CreateOffscreenLightDescriptorSets();
+		CreateSSSBlurDescriptorSets();
 
 	}
 
@@ -623,6 +976,11 @@ namespace VlkEngine {
 			}
 
 			vkCmdEndRenderPass(commandBuffer);
+		}
+
+		// sss blur pass ( 2 pass )
+		{
+			
 		}
 
 		// main pass
@@ -837,12 +1195,12 @@ namespace VlkEngine {
 			dynamicBufferInfo.range = dynamicAlignment;
 
 			std::array<VkDescriptorImageInfo,2> lightImageInfo;
-			for (int i = 0; i < 2; i++) {
-				lightImageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				lightImageInfo[i].imageView = offscreenLightPass.imageView[i];
-				lightImageInfo[i].sampler = offscreenLightPass.sampler;
-			}
-
+			lightImageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			lightImageInfo[0].imageView = offscreenLightPass.imageView[0];
+			lightImageInfo[0].sampler = offscreenLightPass.sampler;
+			lightImageInfo[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			lightImageInfo[1].imageView = offscreenLightPass.imageView[1];
+			lightImageInfo[1].sampler = offscreenLightPass.sampler;
 
 			VkDescriptorImageInfo shadowImageInfo{};
 			shadowImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

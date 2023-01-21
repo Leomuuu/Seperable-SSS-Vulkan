@@ -11,6 +11,7 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS
 file(GLOB_RECURSE GLSL_SOURCE_FILES
   "${ENGINE_ROOT_DIR}/shader/*.frag"
   "${ENGINE_ROOT_DIR}/shader/*.vert"
+  "${ENGINE_ROOT_DIR}/shader/*.comp"
 )
 
 foreach(GLSL ${GLSL_SOURCE_FILES})

@@ -107,6 +107,12 @@ namespace VlkEngine {
 		glm::vec3 lightRadiance;
 	};
 
+	struct SSSBlurPushConsts
+	{
+		glm::vec2 dir;
+		glm::vec2 windowSize;
+		float sssWidth;
+	};
 
 }
 

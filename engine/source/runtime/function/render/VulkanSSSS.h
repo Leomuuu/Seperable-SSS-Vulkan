@@ -1,16 +1,18 @@
 #pragma once
 #include "VulkanShadowMap.h"
 
+#define SSSS_SAMPLES 25 
+
 namespace VlkEngine {
 	class VulkanSSSS :public VulkanShadowMap {
 
 	protected:
-		// offscreen light rendering
+	/************  offscreen light rendering pass begin ************/ 
 		struct OffscreenPass {
 			int32_t width, height;
 			VkFramebuffer frameBuffer;
 			VkRenderPass renderPass;
-			VkImage image[2];
+			VkImage image[2]; // diffuse , specular
 			VkDeviceMemory deviceMemory[2];
 			VkImageView imageView[2];
 			VkSampler sampler;
@@ -45,18 +47,49 @@ namespace VlkEngine {
 			VkImage depthImage;
 			VkDeviceMemory depthImageMemory;
 			VkImageView depthImageView;
-		} offscreenLightDepthResource;
+		} offscreenDepthResource;
 
-	protected:
-		void CreateOffscreenLightRenderpass();
 		void CreateOffscreenLightImage();
+		void CreateOffscreenDepthResource();
+		void CreateOffscreenLightRenderpass();
 		void CreateOffscreenLightFrameBuffer();
 		void CreateOffscreenLightUniformBuffers();
 		void CreateOffscreenLightDescriptorSetLayout();
-		void CreateOffscreenLightDescriptorSets();
 		void CreateOffscreenLightPipeline();
-		void CreateOffscreenLightDepthResource();
+		void CreateOffscreenLightDescriptorSets();
 		void DestroyOffscreenLightResources();
+	/************ offscreen light rendering pass end ************/
+
+
+	/************  offscreen sssblur pass begin ************/
+		struct SSSBlurPass {
+			VkImage image[2];  
+			VkDeviceMemory deviceMemory[2];
+			VkImageView imageView[2];
+			VkFramebuffer frameBuffer[2];
+			VkRenderPass renderPass[2];
+		} sssBlurPass;
+
+		struct SSSBlurDescriptor {
+			VkDescriptorSetLayout descriptorSetLayout;
+			VkDescriptorPool descriptorPool;
+			std::vector<VkDescriptorSet> descriptorSets;
+		}sssBlurDescriptor;
+
+		struct SSSBlurPipeline {
+			VkPipeline pipeline[2];
+			VkPipelineLayout pipelineLayout;
+		}sssBlurPipeline;
+
+		void CreateSSSBlurImage();
+		void CreareSSSBlurRenderPass();
+		void CreareSSSBlurFrameBuffer();
+		void CreateSSSBlurDescriptorSetLayout();
+		void CreateSSSBlurPipeline();
+		void CreateSSSBlurDescriptorSets();
+
+
+	/************  offscreen sssblur pass end ************/
 
 
 	public:
@@ -64,18 +97,27 @@ namespace VlkEngine {
 
 		virtual void StartVulkan();
 		virtual void ShutDownVulkan();
-
 		virtual void RecordCommandBuffer(uint32_t imageIndex, uint32_t currentFrame);
 		virtual void UpdateUniformBuffer(uint32_t currentImage);
 
+		/************ pre calculate  kernel begin ************/
+
+
+		/************ pre calculate  kernel begin ************/
+
+
+
 	protected:
-		// Main Pass
+		/************ main pass begin ************/
+
 		// Descriptor
 		virtual void CreateDescriptorSetLayout();
 		virtual void CreateDescriptorPool();
 		virtual void CreateDescriptorSets();
 		// Graphics Pipeline
 		virtual void CreateGraphicsPipeline();
+
+		/************ main pass end *************/
 
 
 	};
