@@ -1006,7 +1006,7 @@ namespace VlkEngine {
 				SSSBlurPushConsts pushconst{
 					(i==0)?glm::vec2(1.0f,0.0f):glm::vec2(0.0f,1.0f),
 					glm::vec2(offscreenLightPass.width, offscreenLightPass.height),
-					0.01f
+					0.005f
 				};
 				vkCmdPushConstants(
 					commandBuffer,
