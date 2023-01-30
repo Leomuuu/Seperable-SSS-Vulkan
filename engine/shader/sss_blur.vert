@@ -13,15 +13,8 @@ layout(binding = 1) uniform dynamicUbo{
 layout(location = 0) in vec3 inPosition;
 
 
-const mat4 biasMat = mat4( 
-	0.5, 0.0, 0.0, 0.0,
-	0.0, 0.5, 0.0, 0.0,
-	0.0, 0.0, 1.0, 0.0,
-	0.5, 0.5, 0.0, 1.0 );
-
-
 void main() {
 	
-	gl_Position = mvp.lightprojview* dynamicubo.model * vec4(inPosition , 1.0);
+	gl_Position = mvp.worldprojview* dynamicubo.model * vec4(inPosition , 1.0);
 
 }

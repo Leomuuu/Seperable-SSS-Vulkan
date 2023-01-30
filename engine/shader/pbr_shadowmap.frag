@@ -148,7 +148,7 @@ void main() {
     vec3 specularTerm= (F*D*G)/max(4*dotNL*dotNV,1e-6 );
     vec3 diffuseTerm= albedo/PI;
 
-    vec3 result= (kd*diffuseTerm+specularTerm)*dotNL*fragubo.lightradiance;
+    vec3 result= (kd*diffuseTerm+(1-kd)*specularTerm)*dotNL*fragubo.lightradiance;
     
     outColor=vec4(result*shadow,1.0);
     

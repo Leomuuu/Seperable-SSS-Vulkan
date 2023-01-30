@@ -909,15 +909,6 @@ namespace VlkEngine {
 
 			vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-			const glm::vec2 windowSize = glm::vec2(swapChainExtent.width,swapChainExtent.height);
-			vkCmdPushConstants(
-				commandBuffer,
-				pipelineLayout,
-				VK_SHADER_STAGE_VERTEX_BIT,
-				0,
-				sizeof(glm::vec2),
-				&windowSize);
-
 			for (uint32_t j = 0; j < engine->modelManager->instanceModelMatrix.size(); ++j)
 			{
 				uint32_t dynamicOffset = j * static_cast<uint32_t>(offscreenShadowUniformBuffer.dynamicAlignment);
@@ -979,8 +970,67 @@ namespace VlkEngine {
 		}
 
 		// sss blur pass ( 2 pass )
-		{
-			
+		{	
+			for(int i=0;i<2;i++){
+				std::array<VkClearValue, 1> clearValues{};
+				clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+
+				VkRenderPassBeginInfo renderPassInfo{};
+				renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+				renderPassInfo.renderPass = sssBlurPass.renderPass[i];
+				renderPassInfo.framebuffer = sssBlurPass.frameBuffer[i];
+				renderPassInfo.renderArea.extent.width = offscreenLightPass.width;
+				renderPassInfo.renderArea.extent.height = offscreenLightPass.height;
+				renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+				renderPassInfo.pClearValues = clearValues.data();
+				vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, sssBlurPipeline.pipeline[i]);
+
+				VkViewport viewport{};
+				viewport.x = 0.0f;
+				viewport.y = 0.0f;
+				viewport.width = static_cast<float>(offscreenLightPass.width);
+				viewport.height = static_cast<float>(offscreenLightPass.height);
+				viewport.minDepth = 0.0f;
+				viewport.maxDepth = 1.0f;
+				vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+				VkRect2D scissor{};
+				scissor.offset = { 0, 0 };
+				scissor.extent.width = offscreenLightPass.width;
+				scissor.extent.height = offscreenLightPass.height;
+				vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+
+				SSSBlurPushConsts pushconst{
+					(i==0)?glm::vec2(1.0f,0.0f):glm::vec2(0.0f,1.0f),
+					glm::vec2(offscreenLightPass.width, offscreenLightPass.height),
+					0.01f
+				};
+				vkCmdPushConstants(
+					commandBuffer,
+					pipelineLayout,
+					VK_SHADER_STAGE_FRAGMENT_BIT,
+					0,
+					sizeof(pushconst),
+					&pushconst);
+
+				VkBuffer vertexBuffers[] = { vertexBuffer };
+				VkDeviceSize offsets[] = { 0 };
+				vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+				vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+				for (uint32_t j = 0; j < engine->modelManager->instanceModelMatrix.size(); ++j)
+				{
+					uint32_t dynamicOffset = j * static_cast<uint32_t>(dynamicAlignment);
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, sssBlurPipeline.pipelineLayout, 0, 1, &sssBlurDescriptor.descriptorSets[2*currentFrame+i], 1, &dynamicOffset);
+					vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(engine->modelManager->indices.size()), engine->modelManager->instanceModelMatrix.size(), 0, 0, 0);
+				}
+
+				vkCmdEndRenderPass(commandBuffer); 
+			}
 		}
 
 		// main pass
@@ -1014,6 +1064,15 @@ namespace VlkEngine {
 			scissor.offset = { 0, 0 };
 			scissor.extent = swapChainExtent;
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+			const glm::vec2 windowSize = glm::vec2(swapChainExtent.width, swapChainExtent.height);
+			vkCmdPushConstants(
+				commandBuffer,
+				pipelineLayout,
+				VK_SHADER_STAGE_FRAGMENT_BIT,
+				0,
+				sizeof(glm::vec2),
+				&windowSize);
 
 			VkBuffer vertexBuffers[] = { vertexBuffer };
 			VkDeviceSize offsets[] = { 0 };
@@ -1088,8 +1147,6 @@ namespace VlkEngine {
 		memcpy(lightdata, offscreenLightUniformBuffer.uboDynamic.model, engine->modelManager->instanceModelMatrix.size() * offscreenLightUniformBuffer.dynamicAlignment);
 
 		// main
-
-
 		memcpy(dynamicUniformData[currentImage], &lightubo, sizeof(lightubo));
 		memcpy(fraguniformBuffersMapped[currentImage], &fragubo, sizeof(fragubo));
 
@@ -1196,7 +1253,7 @@ namespace VlkEngine {
 
 			std::array<VkDescriptorImageInfo,2> lightImageInfo;
 			lightImageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			lightImageInfo[0].imageView = offscreenLightPass.imageView[0];
+			lightImageInfo[0].imageView = sssBlurPass.imageView[1];
 			lightImageInfo[0].sampler = offscreenLightPass.sampler;
 			lightImageInfo[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			lightImageInfo[1].imageView = offscreenLightPass.imageView[1];

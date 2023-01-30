@@ -56,7 +56,7 @@ void main()
 	vec2 lightCoord=vec2(gl_FragCoord.x/pushConsts.windowSize.x,gl_FragCoord.y/pushConsts.windowSize.y);
 
 	vec4 colorM = vec4(texture(uInputTexture,lightCoord.xy).xyz,1.0);
-	
+
 	// skip blurring for non SSS pixels
 	if (colorM.a == 0.0)
 	{
@@ -100,4 +100,6 @@ void main()
 	}
 
 	outColor=colorBlurred;
+	
+	
 }
