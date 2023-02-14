@@ -49,7 +49,7 @@ namespace VlkEngine {
         glfwSetKeyCallback(window, KeyInputcallback); 
         glfwSetCursorPosCallback(window, MouseMovecallback);
 
-        camera = new Camera(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+        camera = new Camera(glm::vec3(0.0f, 0.3f, 0.625f), glm::vec3(0.0f, 0.3f, 0.0f),
             worldUp,
             glm::radians(45.0f),0.1f,10.0f);
 
@@ -75,8 +75,21 @@ namespace VlkEngine {
             glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
                 glm::vec3(0.0, 1.0, 0.0)), glm::vec3(0.0f, 0.0f, -0.8f)));
         
+        
+        bool ssson = true;
+        std::ifstream in;
+        in.open("SETTINGS.txt", std::ios::in);
+        if (in) {
+            std::string setting;
+            getline(in, setting);
+            getline(in, setting);
+            if (setting != "sss_on:true")
+                ssson = false;
+        }
 
-        vulkanBase = new VulkanSSSS(window, this);
+        if (ssson)
+            vulkanBase = new VulkanSSSS(window, this);
+        else vulkanBase = new VulkanShadowMap(window, this);
         
     }
 

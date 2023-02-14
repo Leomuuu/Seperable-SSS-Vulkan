@@ -9,6 +9,8 @@
 #include "resource/ModelManager.h"
 #include "resource/PbrModelManager.h"
 
+#include <iostream>
+#include <fstream>
 
 namespace VlkEngine {
     class VulkanEngine {
