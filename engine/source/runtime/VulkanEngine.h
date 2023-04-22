@@ -62,8 +62,9 @@ namespace VlkEngine {
         ModelManager* modelManager;
 
         // light
-        glm::vec3 lightPosition=glm::vec3(2);
-        glm::vec3 lightRadiance = glm::vec3(6);
+        glm::vec3 lightPosition=glm::vec3(5,0,0);
+        glm::vec3 lightRadiance = glm::vec3(10);
+        float lightradius = 5.0;
         float lightFov = 30.0f;
 
     };

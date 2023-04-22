@@ -242,22 +242,23 @@ namespace VlkEngine {
 		}
 	}
 
+	static float rotate0 = 0;
+	static float rotate1 = 0;
+
 	void Editor::DrawUI()
 	{
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		static glm::vec3 lightpos = renderEngine->lightPosition;
-		static float lightposx = lightpos.x;
-		static float lightposy = lightpos.y;
-		static float lightposz = lightpos.z;
 		ImGui::Begin("Renderer Information");
 		ImGui::TextColored(ImVec4(1, 1, 0, 1), "Light Position");
-		ImGui::SliderFloat("lightposx", &lightposx, -5.0f, 5.0f);
-		ImGui::SliderFloat("lightposy", &lightposy, -5.0f, 5.0f);
-		ImGui::SliderFloat("lightposz", &lightposz, -5.0f, 5.0f);
-		renderEngine->lightPosition=glm::vec3(lightposx, lightposy, lightposz);
+		ImGui::SliderFloat("lightrotatex", &rotate0, -1.0f*MPI, 1.0f * MPI);
+		ImGui::SliderFloat("lightrotatey", &rotate1, -1.0f * MPI, 1.0f * MPI);
+		renderEngine->lightPosition=glm::vec3(
+			renderEngine->lightradius * sin(rotate0)*cos(rotate1), 
+			renderEngine->lightradius * sin(rotate0) * sin(rotate1),
+			renderEngine->lightradius * cos(rotate0));
 
 		ImGui::TextColored(ImVec4(1, 1, 0, 1),"Camera Position");
 		ImGui::Text("x: %.3f", renderEngine->camera->GetPosition().x);

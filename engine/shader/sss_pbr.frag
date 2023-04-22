@@ -19,6 +19,7 @@ layout(location = 1) out vec4 outColor1;
 
 
 float PI=3.141592653589793626;
+float Translucency=1;
 
 float G_GeometrySmith(float dotNV, float dotNL, float roughness)
 {
@@ -73,6 +74,7 @@ mat3 calculateTBN( vec3 N, vec3 p, vec2 uv )
     float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
     return mat3( T * -invmax, B * invmax, N );
 }
+
 
 void main() {
 

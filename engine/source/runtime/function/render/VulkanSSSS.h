@@ -2,7 +2,8 @@
 #include "VulkanShadowMap.h"
 
 #define SSSS_SAMPLES 25 
-
+#define SSSS_WIDTH 0.015f
+#define DTRANSLUCENCY -0.05
 namespace VlkEngine {
 	class VulkanSSSS :public VulkanShadowMap {
 
@@ -99,11 +100,6 @@ namespace VlkEngine {
 		virtual void ShutDownVulkan();
 		virtual void RecordCommandBuffer(uint32_t imageIndex, uint32_t currentFrame);
 		virtual void UpdateUniformBuffer(uint32_t currentImage);
-
-		/************ pre calculate  kernel begin ************/
-
-
-		/************ pre calculate  kernel begin ************/
 
 
 

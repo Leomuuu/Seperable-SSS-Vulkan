@@ -31,6 +31,7 @@
 #include <algorithm> 
 #include <chrono>
 
+#define MPI 3.14159265358979323
 
 // validation layer
 #define  NDEBUG
@@ -112,6 +113,12 @@ namespace VlkEngine {
 		glm::vec2 dir;
 		glm::vec2 windowSize;
 		float sssWidth;
+	};
+
+	struct SSSStranslucencyPushConsts {
+		glm::vec2 windowSize;
+		glm::vec3 translucency_sssWidth_lightFarPlane;
+		glm::vec3 lightworldpos;
 	};
 
 }

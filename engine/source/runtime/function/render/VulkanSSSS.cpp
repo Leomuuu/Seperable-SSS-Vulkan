@@ -1004,9 +1004,11 @@ namespace VlkEngine {
 
 
 				SSSBlurPushConsts pushconst{
-					(i==0)?glm::vec2(1.0f,0.0f):glm::vec2(0.0f,1.0f),
+					(i == 0) ? 
+						glm::vec2(1.0f,0.0f) : 
+						glm::vec2(0.0f,1.0f),
 					glm::vec2(offscreenLightPass.width, offscreenLightPass.height),
-					0.005f
+					SSSS_WIDTH
 				};
 				vkCmdPushConstants(
 					commandBuffer,
@@ -1066,13 +1068,18 @@ namespace VlkEngine {
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 			const glm::vec2 windowSize = glm::vec2(swapChainExtent.width, swapChainExtent.height);
+			SSSStranslucencyPushConsts pushconst2{
+					windowSize,
+					glm::vec3(DTRANSLUCENCY,SSSS_WIDTH,engine->camera->zFar),
+					engine->lightPosition
+			};
 			vkCmdPushConstants(
 				commandBuffer,
 				pipelineLayout,
 				VK_SHADER_STAGE_FRAGMENT_BIT,
 				0,
-				sizeof(glm::vec2),
-				&windowSize);
+				sizeof(pushconst2),
+				&pushconst2);
 
 			VkBuffer vertexBuffers[] = { vertexBuffer };
 			VkDeviceSize offsets[] = { 0 };
@@ -1179,7 +1186,7 @@ namespace VlkEngine {
 
 		VkDescriptorSetLayoutBinding lightSamplerLayoutBinding{};
 		lightSamplerLayoutBinding.binding = 2;
-		lightSamplerLayoutBinding.descriptorCount = 2;
+		lightSamplerLayoutBinding.descriptorCount = 4;
 		lightSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		lightSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -1211,7 +1218,7 @@ namespace VlkEngine {
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[2].descriptorCount = 2*static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[2].descriptorCount = 4*static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
@@ -1251,13 +1258,19 @@ namespace VlkEngine {
 			dynamicBufferInfo.offset = normalUBOAlignment;
 			dynamicBufferInfo.range = dynamicAlignment;
 
-			std::array<VkDescriptorImageInfo,2> lightImageInfo;
+			std::array<VkDescriptorImageInfo,4> lightImageInfo;
 			lightImageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			lightImageInfo[0].imageView = sssBlurPass.imageView[1];
 			lightImageInfo[0].sampler = offscreenLightPass.sampler;
 			lightImageInfo[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			lightImageInfo[1].imageView = offscreenLightPass.imageView[1];
 			lightImageInfo[1].sampler = offscreenLightPass.sampler;
+			lightImageInfo[2].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			lightImageInfo[2].imageView = pbrTextureImageView[5];
+			lightImageInfo[2].sampler = offscreenLightPass.sampler;
+			lightImageInfo[3].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			lightImageInfo[3].imageView = textureImageView;
+			lightImageInfo[3].sampler = offscreenLightPass.sampler;
 
 			VkDescriptorImageInfo shadowImageInfo{};
 			shadowImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
